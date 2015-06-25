@@ -11,6 +11,8 @@
 #include "../base_types/Serializable.hpp"
 #include "../base_types/KeyValue.hpp"
 #include "../base_types/Pointer.hpp"
+#include "../base_types/Dependency.hpp"
+
 
 #include <iostream>
 #include <string>
@@ -21,6 +23,7 @@
 
 class LogEntry : public Serializable<LogEntry>{
 private:
+	std::vector<Dependency> dependencies;
 	std::vector<KeyValue> kvList;
 	Pointer currentP;
 	bool serialized;
@@ -28,10 +31,12 @@ private:
 
 public:
 	LogEntry();
-	LogEntry(std::vector<KeyValue> kvList, Pointer currentP, bool serialized);
+	LogEntry(std::vector<Dependency>, std::vector<KeyValue> kvList, Pointer currentP, bool serialized);
+	std::vector<Dependency> getDependencies() const;
+
+	std::vector<KeyValue> getKVs() const;
 	Pointer getCurrentP() const;
 	bool isSerialized() const;
-	std::vector<KeyValue> getKVs() const;
 	bool isEqual(const LogEntry &entry) const;
 	virtual void serialize(std::ostream& stream) const;
 	static void doDeserialize(std::istream&, LogEntry &);

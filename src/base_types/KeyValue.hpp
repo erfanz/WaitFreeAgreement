@@ -24,14 +24,12 @@ class KeyValue : public Serializable<KeyValue>{
 private:
 	Key key;
 	Value value;
-	Pointer nextPointer;
 
 public:
 	KeyValue();
-	KeyValue(Key, Value, Pointer);
+	KeyValue(Key, Value);
 	Key getKey() const;
 	Value getValue() const;
-	Pointer getNextPointer() const;
 	std::string toString() const;
 	bool isEqual(const KeyValue &kv) const;
 	virtual void serialize(std::ostream& stream) const;

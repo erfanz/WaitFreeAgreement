@@ -10,6 +10,8 @@
 #include "LogEntryTest.hpp"
 #include "PointerTest.hpp"
 #include "KeyValueTest.hpp"
+#include "DependencyTest.hpp"
+
 
 
 int main() {
@@ -22,6 +24,11 @@ int main() {
 	KeyValueTest::test_serialize();
 	KeyValueTest::test_deserialize();
 	KeyValueTest::test_toString();
+
+	DependencyTest::test_constructor();
+	DependencyTest::test_serialize();
+	DependencyTest::test_deserialize();
+	DependencyTest::test_toString();
 
 	LogEntryTest::test_constructor();
 	LogEntryTest::test_serialize();

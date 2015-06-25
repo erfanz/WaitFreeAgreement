@@ -19,11 +19,6 @@ public:
 	static void test_constructor();
 	static void test_serialize();
 	static void test_deserialize();
-
 };
-
-
-
-
 
 #endif /* LOGENTRYTEST_HPP_ */

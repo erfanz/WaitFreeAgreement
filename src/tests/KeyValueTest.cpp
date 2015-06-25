@@ -19,12 +19,10 @@ void KeyValueTest::test_constructor(){
 
 	Key k("k1");
 	Value v("v1");
-	Pointer p(9, 98, 987, 9876);
-	KeyValue kv(k, v, p);
+	KeyValue kv(k, v);
 
 	assert(kv.getKey().isEqual(k) == true);
 	assert(kv.getValue().isEqual(v) == true);
-	assert(kv.getNextPointer().isEqual(p) == true);
 }
 
 void KeyValueTest::test_serialize() {
@@ -32,11 +30,10 @@ void KeyValueTest::test_serialize() {
 
 	Key k("k1");
 	Value v("v1");
-	Pointer p(9, 98, 987, 9876);
-	KeyValue kv(k, v, p);
+	KeyValue kv(k, v);
 
 	std::ostringstream os;
-	std::string expected = "k1 v1 " + p.toString();
+	std::string expected = "k1 v1";
 	kv.serialize(os);
 
 	assert(os.str().compare(expected) == 0);
@@ -46,8 +43,7 @@ void KeyValueTest::test_deserialize() {
 
 	Key k("k1");
 	Value v("v1");
-	Pointer p(9, 98, 987, 9876);
-	KeyValue kv(k, v, p);
+	KeyValue kv(k, v);
 
 	std::ostringstream os;
 	kv.serialize(os);
@@ -58,9 +54,6 @@ void KeyValueTest::test_deserialize() {
 
 	assert(newKv.getKey().isEqual(k));
 	assert(newKv.getValue().isEqual(v));
-	assert(newKv.getNextPointer().isEqual(p));
-
-
 }
 void KeyValueTest::test_toString() {
 

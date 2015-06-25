@@ -13,13 +13,22 @@
 
 #define CLASS_NAME	"LogEntryTest"
 
+
 void LogEntryTest::test_constructor() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	uint64_t c = 0x1000000000000001;
+	std::vector<Dependency> dependencies;
 
-	uint64_t a = 0x1011001000000011;
-	uint64_t b = 0x0101000100000001;
+	int b1 = 10;
+	Pointer p1 = Pointer::makePointer(0x1011001000000011);
+	Dependency dep1(b1, p1);
+
+	int b2 = 11;
+	Pointer p2 = Pointer::makePointer(0x0101000100000001);
+	Dependency dep2(b2, p2);
+
+	dependencies.push_back(dep1);
+	dependencies.push_back(dep2);
 
 	std::vector<KeyValue> kvList;
 
@@ -29,36 +38,45 @@ void LogEntryTest::test_constructor() {
 	Key k2("k202");
 	Value v2("v202");
 
-	Pointer pa = Pointer::makePointer(a);
-	Pointer pb = Pointer::makePointer(b);
-	Pointer pc = Pointer::makePointer(c);
-
-
-
-	KeyValue kv1 (k1, v1, pa);
-	KeyValue kv2 (k2, v2, pb);
+	KeyValue kv1 (k1, v1);
+	KeyValue kv2 (k2, v2);
 
 	kvList.push_back(kv1);
 	kvList.push_back(kv2);
 
-	LogEntry entry(kvList, pc, false);
+	Pointer pc = Pointer::makePointer(0x1000000000000001);
+
+	LogEntry entry(dependencies, kvList, pc, false);
 
 	assert(entry.getCurrentP().isEqual(pc) == true);
 	assert(entry.isSerialized() == false);
+
+	std::vector<Dependency> depList = entry.getDependencies();
+	assert(depList.size() == dependencies.size());
+	for (size_t i = 0; i < depList.size(); i++)
+		assert(depList.at(i).isEqual(dependencies.at(i)) == true);
+
 	std::vector<KeyValue> kvs = entry.getKVs();
 	assert(kvs.size() == kvList.size());
 	for (size_t i = 0; i < kvs.size(); i++)
 		assert(kvs.at(i).isEqual(kvList.at(i)) == true);
 }
 
-
 void LogEntryTest::test_serialize() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	uint64_t c = 0x1000000000000001;
+	std::vector<Dependency> dependencies;
 
-	uint64_t a = 0x1011001000000011;
-	uint64_t b = 0x0101000100000001;
+	int b1 = 10;
+	Pointer p1 = Pointer::makePointer(0x1011001000000011);
+	Dependency dep1(b1, p1);
+
+	int b2 = 11;
+	Pointer p2 = Pointer::makePointer(0x0101000100000001);
+	Dependency dep2(b2, p2);
+
+	dependencies.push_back(dep1);
+	dependencies.push_back(dep2);
 
 	std::vector<KeyValue> kvList;
 
@@ -68,29 +86,47 @@ void LogEntryTest::test_serialize() {
 	Key k2("k202");
 	Value v2("v202");
 
-	KeyValue kv1 (k1, v1, Pointer::makePointer(a));
-	KeyValue kv2 (k2, v2, Pointer::makePointer(b));
+	KeyValue kv1 (k1, v1);
+	KeyValue kv2 (k2, v2);
 
 	kvList.push_back(kv1);
 	kvList.push_back(kv2);
 
-	LogEntry entry(kvList, Pointer::makePointer(c), false);
 
-	std::string expected = entry.getCurrentP().toString() + " " + "0" + " " + "2" + " " + kv1.toString() + " " + kv2.toString() + " " + entry.getCurrentP().toString();
+	LogEntry entry(dependencies, kvList, Pointer::makePointer(0x1000000000000001), false);
+
+	std::string expected = entry.getCurrentP().toString() + " "
+			+ "0" + " "		// isSerialized
+			+ "2" + " "		// depNum
+			+ "10" + " "
+			+ "11" + " "
+			+ p1.toString() + " "
+			+ p2.toString() + " "
+			+ "2" + " "		// kvNum
+			+ kv1.toString() + " "
+			+ kv2.toString() + " "
+			+ entry.getCurrentP().toString();
 
 	std::ostringstream os;
 	entry.serialize(os);
-
 	assert(os.str().compare(expected) == 0);
 }
 
 void LogEntryTest::test_deserialize() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	uint64_t z = 0x1000000000000001;
-	uint64_t a = 0x1011001000000011;
-	uint64_t b = 0x0101000100000001;
-	uint64_t c = 0x11f10d0100ccdf01;
+	std::vector<Dependency> dependencies;
+
+	int b1 = 10;
+	Pointer p1 = Pointer::makePointer(0x1011001000000011);
+	Dependency dep1(b1, p1);
+
+	int b2 = 11;
+	Pointer p2 = Pointer::makePointer(0x0101000100000001);
+	Dependency dep2(b2, p2);
+
+	dependencies.push_back(dep1);
+	dependencies.push_back(dep2);
 
 	std::vector<KeyValue> kvList;
 
@@ -103,18 +139,20 @@ void LogEntryTest::test_deserialize() {
 	Key k3("k303");
 	Value v3("v303");
 
-	KeyValue kv1 (k1, v1, Pointer::makePointer(a));
-	KeyValue kv2 (k2, v2, Pointer::makePointer(b));
-	KeyValue kv3 (k3, v3, Pointer::makePointer(c));
+	KeyValue kv1 (k1, v1);
+	KeyValue kv2 (k2, v2);
+	KeyValue kv3 (k3, v3);
 
 	kvList.push_back(kv1);
 	kvList.push_back(kv2);
 	kvList.push_back(kv3);
 
-	LogEntry entry(kvList, Pointer::makePointer(z), false);
+	LogEntry entry(dependencies, kvList, Pointer::makePointer(0x1000000000000001), false);
+
 
 	std::ostringstream os;
 	entry.serialize(os);
+
 
 	LogEntry newEntry;
 	std::istringstream is(os.str());

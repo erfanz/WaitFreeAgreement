@@ -14,10 +14,9 @@ KeyValue::KeyValue(){
 }
 
 
-KeyValue::KeyValue(Key k, Value v, Pointer n) {
+KeyValue::KeyValue(Key k, Value v) {
 	this->key = k;
 	this->value = v;
-	this->nextPointer = n;
 }
 
 
@@ -27,9 +26,7 @@ Key KeyValue::getKey() const{
 Value KeyValue::getValue() const {
 	return value;
 }
-Pointer KeyValue::getNextPointer() const{
-	return nextPointer;
-}
+
 
 std::string KeyValue::toString() const{
 	std::ostringstream os;
@@ -39,26 +36,22 @@ std::string KeyValue::toString() const{
 
 bool KeyValue::isEqual(const KeyValue &kv) const {
 	if (key.isEqual(kv.getKey())
-			&& value.isEqual(kv.getValue())
-			&& nextPointer.isEqual(kv.getNextPointer()))
+			&& value.isEqual(kv.getValue()))
 		return true;
 	else return false;
 }
 
 void KeyValue::serialize(std::ostream& stream) const{
 	stream << key.getId() << " "
-			<< value.getContent() << " "
-			<< nextPointer.toString();
+			<< value.getContent();
 }
 
 void KeyValue::doDeserialize(std::istream& stream, KeyValue &kv){
 	std::string id;
 	std::string content;
-	std::string p;
 
-	stream >> id >> content >> p;
+	stream >> id >> content;
 
 	kv.key.setId(id);
 	kv.value.setContent(content);
-	Pointer::fromString(p, kv.nextPointer);
 }
