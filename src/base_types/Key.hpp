@@ -21,8 +21,8 @@ private:
 public:
 	Key();
 	Key(std::string id);
-	std::string getId() const;
-	void setId(std::string id);
+	const std::string& getId() const;
+	void setId(const std::string& id);
 	HashMaker hashKey() const;
 	bool isEqual(const Key &key) const;
 };

@@ -1,7 +1,7 @@
 CC = g++
 LD = g++
 
-CPPFLAGS = -std=gnu++14 -Wall -DGTEST_OS_CYGWIN=1
+CPPFLAGS = -std=gnu++14 -Wall -Wconversion -Wextra -Wno-ignored-qualifiers -DGTEST_OS_CYGWIN=1
 BUILDDIR = build/widgets
 
 #MODULES   := bases_classes base_types tests util
@@ -46,6 +46,10 @@ $(BUILD_DIR):
 $(EXE_DIR):
 	@mkdir -p $@
 # -------------------------------------------------
+# Cleaning the object files
+clean:
+	#rm -f $(OBJ)
+	rm -rf $(BUILD_DIR)
 	
 
 # this line creates the implicit rules for each build using the function make-goal,

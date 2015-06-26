@@ -17,7 +17,7 @@ Value::Value(std::string content){
 	this->content = content;
 }
 
-std::string Value::getContent() const{
+const std::string& Value::getContent() const{
 	return content;
 }
 
@@ -25,7 +25,7 @@ uint32_t Value::getSize() const{
 	return size;
 }
 
-void Value::setContent(std::string content) {
+void Value::setContent(const std::string &content) {
 	this->content = content;
 }
 

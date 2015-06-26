@@ -30,7 +30,7 @@ void LogEntryTest::test_constructor() {
 	dependencies.push_back(dep1);
 	dependencies.push_back(dep2);
 
-	std::vector<KeyValue> kvList;
+	std::vector<KeyValue> updates;
 
 	Key k1("k101");
 	Value v1("v101");
@@ -41,12 +41,12 @@ void LogEntryTest::test_constructor() {
 	KeyValue kv1 (k1, v1);
 	KeyValue kv2 (k2, v2);
 
-	kvList.push_back(kv1);
-	kvList.push_back(kv2);
+	updates.push_back(kv1);
+	updates.push_back(kv2);
 
 	Pointer pc = Pointer::makePointer(0x1000000000000001);
 
-	LogEntry entry(dependencies, kvList, pc, false);
+	LogEntry entry(dependencies, updates, pc, false);
 
 	assert(entry.getCurrentP().isEqual(pc) == true);
 	assert(entry.isSerialized() == false);
@@ -56,10 +56,10 @@ void LogEntryTest::test_constructor() {
 	for (size_t i = 0; i < depList.size(); i++)
 		assert(depList.at(i).isEqual(dependencies.at(i)) == true);
 
-	std::vector<KeyValue> kvs = entry.getKVs();
-	assert(kvs.size() == kvList.size());
-	for (size_t i = 0; i < kvs.size(); i++)
-		assert(kvs.at(i).isEqual(kvList.at(i)) == true);
+	std::vector<KeyValue> newUpdates = entry.getUpdates();
+	assert(newUpdates.size() == updates.size());
+	for (size_t i = 0; i < newUpdates.size(); i++)
+		assert(newUpdates.at(i).isEqual(updates.at(i)) == true);
 }
 
 void LogEntryTest::test_serialize() {
@@ -159,4 +159,41 @@ void LogEntryTest::test_deserialize() {
 	LogEntry::deserialize(is, newEntry);
 
 	assert(newEntry.isEqual(entry) == true);
+}
+
+void LogEntryTest::test_calculateEntrySize() {
+	TestBase::printMessage(CLASS_NAME, __func__);
+
+	std::vector<Dependency> dependencies;
+
+	int b1 = 10;
+	Pointer p1 = Pointer::makePointer(0x1011001000000011);
+	Dependency dep1(b1, p1);
+
+	int b2 = 11;
+	Pointer p2 = Pointer::makePointer(0x0101000100000001);
+	Dependency dep2(b2, p2);
+
+	dependencies.push_back(dep1);
+	dependencies.push_back(dep2);
+
+	std::vector<KeyValue> updates;
+
+	Key k1("k101");
+	Value v1("v101");
+
+	Key k2("k202");
+	Value v2("v202");
+
+	KeyValue kv1 (k1, v1);
+	KeyValue kv2 (k2, v2);
+
+	updates.push_back(kv1);
+	updates.push_back(kv2);
+
+	LogEntry entry(dependencies, updates, Pointer::makePointer(0x1000000000000001), false);
+
+	std::ostringstream os;
+	entry.serialize(os);
+	assert(LogEntry::calculateEntrySize(dependencies, updates) == entry_size_t(os.str().size()));
 }

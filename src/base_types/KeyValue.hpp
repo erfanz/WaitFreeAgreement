@@ -28,8 +28,9 @@ private:
 public:
 	KeyValue();
 	KeyValue(Key, Value);
-	Key getKey() const;
-	Value getValue() const;
+	const Key& getKey() const;
+	const Value& getValue() const;
+	size_t getTotalSize() const;
 	std::string toString() const;
 	bool isEqual(const KeyValue &kv) const;
 	virtual void serialize(std::ostream& stream) const;

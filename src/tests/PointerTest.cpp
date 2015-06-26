@@ -60,6 +60,15 @@ void PointerTest::test_deserialize(){
 	assert(p.getOffset() == p2.getOffset());
 }
 
+void PointerTest::test_getTotalSize(){
+	TestBase::printMessage(CLASS_NAME, __func__);
+
+	Pointer p(12, 32, 117, 18098) ;
+	std::ostringstream os;
+	p.serialize(os);
+	assert(p.getTotalSize() == os.str().size());
+}
+
 void PointerTest::test_toString(){
 	TestBase::printMessage(CLASS_NAME, __func__);
 

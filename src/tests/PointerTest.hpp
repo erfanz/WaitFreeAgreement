@@ -18,12 +18,8 @@ public:
 	static void test_construct();
 	static void test_serialize();
 	static void test_deserialize();
+	static void test_getTotalSize();
 	static void test_toString();
 };
-
-
-
-
-
 
 #endif /* POINTERTEST_HPP_ */

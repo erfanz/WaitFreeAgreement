@@ -10,7 +10,7 @@
 #include "Coordinator.hpp"
 #include "../../util/Errors.hpp"
 
-Coordinator::Coordinator(uint32_t coordNum) : coordinatorNum (coordNum) {
+Coordinator::Coordinator(coordinator_num_t coordNum) : coordinatorID (coordNum) {
 	generationNum = 0;
 	freeBufferOffset = (uint32_t)0;
 }
@@ -20,100 +20,73 @@ Coordinator::~Coordinator() {
 }
 
 
-int Coordinator::connectToMemoryServers(std::vector<MemoryServer> memoryServers){
-	this->memoryServers = memoryServers;
-	return 0;
+//int Coordinator::connectToMemoryServers(std::vector<MemoryServer> memoryServers){
+//	this->memoryServers = memoryServers;
+//	return 0;
+//}
+
+ErrorType Coordinator::applyChange(Change &change, TID tID){
+	LogEntry entry;
+	Pointer entryPointer;
+	createNewPointer(change, entryPointer);
+	makeNewLogEntry(change, entryPointer, entry);
+	propagateLogEntry(entry);
+	publishChanges(entry);
 }
-int Coordinator::writeLogEntry(){
-	// a log entry is created and is placed on the log journal of all memory servers
 
-	return 0;
+ErrorType Coordinator::createNewPointer(Change &change, Pointer &pointer) {
+	entry_size_t entrySize = LogEntry::calculateEntrySize(change.getDependencies(), change.getUpdates());
+	pointer.setAll(coordinatorID, generationNum, entrySize, freeBufferOffset);
+
+	freeBufferOffset += entrySize;	// moving forward the free buffer head
+
+	return ERROR::SUCCESS;
 }
-int Coordinator::publishChanges(){
-	return 0;
+
+ErrorType Coordinator::makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry &entry) const{
+	bool isSerialized = false;
+	entry.setAll(change.getDependencies(), change.getUpdates(), entryPointer, isSerialized);
+	return ERROR::SUCCESS;
 }
 
-
-int Coordinator::applyChange(std::vector<KeyValue> &updates, std::vector<KeyValue> &dependencies, TID tID){
-	const MemoryServerContext *localMS = findLocalMemoryServer();
-	for (int i = 0; i < updates.size(); i++){
-
-
+ErrorType Coordinator::propagateLogEntry(LogEntry &entry){
+	for (size_t i = 0; i < memoryServerCtxs.size(); i++) {
+		memoryServerCtxs.at(i).writeLogEntry(entry);
 	}
+	return ERROR::SUCCESS;
 }
 
-
-int Coordinator::putByKey(Key key, Value value){
-//	const LogEntry *entry = constructUpdate(key, value);
-//	propagateLogEntry(entry, )
-//
-//	for (size_t i = 0; i < MEMORY_SERVER_CNT; i++){
-//
-//
-//	}
-}
-int Coordinator::readByKey(const Key key, const SCN scn, const TID tid){
-	// hash the key to find the corresponding bucket
-	HashedKey hashedKey = key.hashKey();
-
-	// find the local memory server, if exists
-	const MemoryServerContext *localMS = findLocalMemoryServer();
-
-	// Checks if it's not out-dated for that particular bucket
-	const SCN missedSCN = localMS->getLastMissedSCN(hashedKey);
-	if (! scn.isSCNCompatible(missedSCN))
-		// TODO: Hand the request over to another coordinator
-		return ERROR_LOCAL_REPLICA_IS_OUTDATED;
-
-
-	// Searches down the key hash to find the entry with the given key and with appropriate scn
-	LogEntry entry = localMS->findItemByVersion(hashedKey, key, scn, tid);
-
-	// check if the item is serialized
-	if (entry.isSerialized())
-		return entry.getValue();
-	else{
-		// TODO resolve conflict
-		return -1;
-	}
+ErrorType Coordinator::publishChanges(LogEntry &entry){
+	return ERROR::SUCCESS;
 }
 
-const LogEntry* Coordinator::constructUpdate (const Key key, const Value value) const{
-//	// 1. Find the local memory server, if exists.
+//int Coordinator::readByKey(const Key key, const SCN scn, const TID tid){
+//	// hash the key to find the corresponding bucket
+//	HashedKey hashedKey = key.hashKey();
+//
+//	// find the local memory server, if exists
 //	const MemoryServerContext *localMS = findLocalMemoryServer();
 //
-//	// 2. Check whether the key is up-to-date.
-//	uint64_t hashedKey = key.hashKey();
+//	// Checks if it's not out-dated for that particular bucket
+//	const SCN missedSCN = localMS->getLastMissedSCN(hashedKey);
+//	if (! scn.isSCNCompatible(missedSCN))
+//		// TODO: Hand the request over to another coordinator
+//		return ERROR_LOCAL_REPLICA_IS_OUTDATED;
 //
-//	if (localMS->checkKeyValid(hashedKey, key) == true) {
-//		// The local memory server is up-to-date
-//		// so it's safe to construct the update from the local copy
 //
-//		//Pointer oldVersion = localMS->findTheLatestVersion(hashedKey, key);
-//		const LogEntry* entry = makeNewLogEntry(key, value);
-//		return entry;
+//	// Searches down the key hash to find the entry with the given key and with appropriate scn
+//	LogEntry entry = localMS->findItemByVersion(hashedKey, key, scn, tid);
 //
+//	// check if the item is serialized
+//	if (entry.isSerialized())
+//		return entry.getValue();
+//	else{
+//		// TODO resolve conflict
+//		return -1;
 //	}
-//	else {
-//		// the coordinator might have missed updates, run Paxos and make read repair
-//
-//		// TODO
-//		return 0L;
-
-	}
-}
-
-const MemoryServerContext* Coordinator::findLocalMemoryServer(){
-	return &memoryServerContexts.at(coordinatorNum);
-}
-
-const LogEntry* Coordinator::makeNewLogEntry(const uint64_t &hashedKey, const Key &key, const Value &value) const{
-	const Pointer* oldPointer = getLastUpdate(hashedKey, key);
-
-	Pointer newPointer = Pointer(coordinatorNum, freeBufferOffset, value.getSize(), generationNum);
-	LogEntry *entry = new LogEntry (value, oldPointer, newPointer);
-
-	return entry;
+//}
 
 
-}
+//const MemoryServerContext* Coordinator::findLocalMemoryServer(){
+//	return &memoryServerContexts.at(coordinatorNum);
+//}

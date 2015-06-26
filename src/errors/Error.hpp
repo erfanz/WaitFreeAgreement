@@ -10,10 +10,11 @@
 #ifndef ERROR_HPP_
 #define ERROR_HPP_
 
-class Error {
-
-};
-
-
+namespace ERROR {
+	enum ErrorType {
+		SUCCESS = 0,
+		hamintori
+	};
+}
 
 #endif /* ERROR_HPP_ */

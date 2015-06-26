@@ -17,11 +17,11 @@ Key::Key(std::string id) {
 	this->id = id;
 }
 
-std::string Key::getId() const {
+const std::string& Key::getId() const {
 	return id;
 }
 
-void Key::setId(std::string id) {
+void Key::setId(const std::string& id) {
 	this->id = id;
 }
 

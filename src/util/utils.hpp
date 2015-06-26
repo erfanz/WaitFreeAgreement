@@ -98,6 +98,8 @@ namespace utilities {
 	    return stream.str();
 	}
 
+	int numDigits(int x);
+
 	void die(const char *reason);
 }
 

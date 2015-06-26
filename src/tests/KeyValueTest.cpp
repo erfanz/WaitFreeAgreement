@@ -38,6 +38,7 @@ void KeyValueTest::test_serialize() {
 
 	assert(os.str().compare(expected) == 0);
 }
+
 void KeyValueTest::test_deserialize() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
@@ -55,11 +56,23 @@ void KeyValueTest::test_deserialize() {
 	assert(newKv.getKey().isEqual(k));
 	assert(newKv.getValue().isEqual(v));
 }
-void KeyValueTest::test_toString() {
+
+void KeyValueTest::test_getTotalSize() {
+	TestBase::printMessage(CLASS_NAME, __func__);
+
+	Key k("key12");
+	Value v("value100987");
+	KeyValue kv(k, v);
+
+	std::ostringstream os;
+	kv.serialize(os);
+
+	assert(kv.getTotalSize() == os.str().size());
+
+
 
 }
 
+void KeyValueTest::test_toString() {
 
-
-
-
+}

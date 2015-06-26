@@ -20,9 +20,9 @@ private:
 public:
 	Value();
 	Value(std::string content);
-	std::string getContent() const;
+	const std::string& getContent() const;
 	uint32_t getSize() const;
-	void setContent(std::string);
+	void setContent(const std::string &);
 	bool isEqual(const Value &v) const;
 };
 

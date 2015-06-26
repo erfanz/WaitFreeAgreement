@@ -23,8 +23,8 @@ private:
 public:
 	Dependency();
 	Dependency(int bucketID, Pointer pointer);
-	int getBucketID() const;
-	Pointer getPointer() const;
+	const int getBucketID() const;
+	const Pointer getPointer() const;
 	void setBucketID(int bucketID);
 	void setPointer(Pointer p);
 	bool isEqual(const Dependency &) const;

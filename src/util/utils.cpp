@@ -49,3 +49,17 @@ uint64_t utilities::binary_string_to_ull(std::string s){
 	std::bitset<64> bit_rep(s);
 	return bit_rep.to_ullong();
 }
+
+int utilities::numDigits(int x) {
+	x = abs(x);
+	return (x < 10 ? 1 :
+		(x < 100 ? 2 :
+		(x < 1000 ? 3 :
+		(x < 10000 ? 4 :
+		(x < 100000 ? 5 :
+		(x < 1000000 ? 6 :
+		(x < 10000000 ? 7 :
+		(x < 100000000 ? 8 :
+		(x < 1000000000 ? 9 :
+		10)))))))));
+}

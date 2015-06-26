@@ -18,7 +18,7 @@ Pointer::Pointer(){
 	;
 }
 
-Pointer::Pointer(uint8_t coordinatorNum, uint8_t generationNum, uint16_t length, uint32_t offset){
+Pointer::Pointer(coordinator_num_t coordinatorNum, generation_num_t generationNum, entry_size_t length, offset_t offset){
 	this->coordinatorNum = coordinatorNum;
 	this->generationNum = generationNum;
 	this->length = length;
@@ -57,10 +57,10 @@ void Pointer::doDeserialize(std::istream& stream, Pointer &p){
 
 	concat = utilities::binary_string_to_ull(binary_str);
 
-	p.coordinatorNum = (uint8_t) (concat >> 56);
-	p.generationNum = (uint8_t)( (concat << 8) >> 56 );
-	p.length = (uint16_t)( (concat << 16) >> 48 );
-	p.offset = (uint32_t)( (concat << 32) >> 32 );
+	p.coordinatorNum = (coordinator_num_t) (concat >> 56);
+	p.generationNum = (generation_num_t)( (concat << 8) >> 56 );
+	p.length = (entry_size_t)( (concat << 16) >> 48 );
+	p.offset = (offset_t)( (concat << 32) >> 32 );
 }
 
 std::string Pointer::toString() const{
@@ -74,31 +74,57 @@ void Pointer::fromString(std::string serialized, Pointer &p){
 	doDeserialize(is, p);
 }
 
-
-Pointer Pointer::makePointer(uint64_t input){
-	uint8_t coordinatorNum = (uint8_t) (input >> 56);
-	uint8_t generationNum = (uint8_t)( (input << 8) >> 56 );
-	uint16_t length = (uint16_t)( (input << 16) >> 48 );
-	uint32_t offset = (uint32_t)( (input << 32) >> 32 );
+Pointer Pointer::makePointer(pointer_size_t input){
+	coordinator_num_t coordinatorNum = (coordinator_num_t) (input >> 56);
+	generation_num_t generationNum = (generation_num_t)( (input << 8) >> 56 );
+	entry_size_t length = (entry_size_t)( (input << 16) >> 48 );
+	offset_t offset = (offset_t)( (input << 32) >> 32 );
 
 	Pointer p(coordinatorNum, generationNum, length, offset);
 	return p;
 }
 
-uint8_t Pointer::getCoordinatorNum() const{
+const coordinator_num_t Pointer::getCoordinatorNum() const{
 	return coordinatorNum;
 }
 
-uint8_t Pointer::getGenerationNum() const{
+const generation_num_t Pointer::getGenerationNum() const{
 	return generationNum;
 }
 
-uint16_t Pointer::getLength() const{
+const entry_size_t Pointer::getLength() const{
 	return length;
 }
 
-uint32_t Pointer::getOffset() const{
+const offset_t Pointer::getOffset() const{
 	return offset;
+}
+
+size_t Pointer::getTotalSize(){
+	return 64;
+}
+
+void Pointer::setCoordinatorNum(coordinator_num_t coordinatorNum) {
+	this->coordinatorNum = coordinatorNum;
+}
+
+void Pointer::setGenerationNum(generation_num_t generationNum) {
+	this->generationNum = generationNum;
+}
+
+void Pointer::setLength(entry_size_t length) {
+	this->length = length;
+}
+
+void Pointer::setOffset(offset_t offset) {
+	this->offset = offset;
+}
+
+void Pointer::setAll(coordinator_num_t coordinatorNum, generation_num_t generationNum, entry_size_t length, offset_t offset) {
+	this->coordinatorNum = coordinatorNum;
+	this->generationNum = generationNum;
+	this->length = length;
+	this->offset = offset;
 }
 
 bool Pointer::isEqual(const Pointer &pointer) const {

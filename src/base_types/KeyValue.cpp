@@ -20,13 +20,21 @@ KeyValue::KeyValue(Key k, Value v) {
 }
 
 
-Key KeyValue::getKey() const{
+const Key& KeyValue::getKey() const{
 	return key;
 }
-Value KeyValue::getValue() const {
+
+const Value& KeyValue::getValue() const {
 	return value;
 }
 
+size_t KeyValue::getTotalSize() const {
+	size_t size = 0;
+	size += key.getId().size();
+	size += 1;		// one space between the key and value
+	size += value.getContent().size();
+	return size;
+}
 
 std::string KeyValue::toString() const{
 	std::ostringstream os;

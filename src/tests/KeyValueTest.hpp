@@ -15,6 +15,7 @@ public:
 	static void test_constructor();
 	static void test_serialize();
 	static void test_deserialize();
+	static void test_getTotalSize();
 	static void test_toString();
 };
 

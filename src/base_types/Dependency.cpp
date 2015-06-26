@@ -20,10 +20,10 @@ Dependency::Dependency(int bucketID, Pointer pointer) {
 	this->pointer = pointer;
 }
 
-int Dependency::getBucketID() const {
+const int Dependency::getBucketID() const {
 	return bucketID;
 }
-Pointer Dependency::getPointer() const {
+const Pointer Dependency::getPointer() const {
 	return pointer;
 }
 
