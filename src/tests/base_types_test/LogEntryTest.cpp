@@ -13,6 +13,17 @@
 
 #define CLASS_NAME	"LogEntryTest"
 
+std::vector<std::function<void()>> LogEntryTest::functionList {
+	test_constructor,
+	test_serialize,
+	test_deserialize,
+	test_calculateEntrySize
+};
+
+std::vector<std::function<void()>>& LogEntryTest::getFunctionList() {
+	//return PointerTest::functionList;
+	return functionList;
+}
 
 void LogEntryTest::test_constructor() {
 	TestBase::printMessage(CLASS_NAME, __func__);

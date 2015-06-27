@@ -17,7 +17,9 @@
 #include "../../errors/Error.hpp"		// to return error from functions
 #include <vector>
 
-typedef ERROR::ErrorType ErrorType;
+typedef error::ErrorType ErrorType;
+typedef error::TestError TestError;
+
 
 class Coordinator {
 private:
@@ -31,6 +33,8 @@ private:
 	ErrorType createNewPointer(Change &change, Pointer &pointer);
 	ErrorType makeNewLogEntry (Change &change, Pointer &entryPointer, LogEntry &entry) const;
 	ErrorType publishChanges(LogEntry &entry);
+	void errorHandler(ErrorType eType);
+
 
 public:
 	Coordinator(coordinator_num_t coordinatorID);

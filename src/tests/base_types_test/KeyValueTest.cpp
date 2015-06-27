@@ -14,6 +14,19 @@
 
 #define CLASS_NAME	"KeyValueTest"
 
+std::vector<std::function<void()>> KeyValueTest::functionList {
+	test_constructor,
+	test_serialize,
+	test_deserialize,
+	test_getTotalSize,
+	test_toString
+};
+
+std::vector<std::function<void()>>& KeyValueTest::getFunctionList() {
+	//return PointerTest::functionList;
+	return functionList;
+}
+
 void KeyValueTest::test_constructor(){
 	TestBase::printMessage(CLASS_NAME, __func__);
 

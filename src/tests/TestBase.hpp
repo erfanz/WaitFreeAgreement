@@ -13,11 +13,13 @@
 #include <string>
 #include <iostream>
 
+
+
 class TestBase {
 protected:
-	 static void printMessage(std::string className, std::string functionName) {
-		 std::cout << "Testing " << className << "::" << functionName << "() ... " << std::endl;
-	 }
+	static void printMessage(std::string className, std::string functionName) {
+		std::cout << "Testing " << className << "::" << functionName << "() ... " << std::endl;
+	}
 };
 
 

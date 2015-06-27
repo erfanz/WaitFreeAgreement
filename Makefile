@@ -5,7 +5,7 @@ CPPFLAGS = -std=gnu++14 -Wall -Wconversion -Wextra -Wno-ignored-qualifiers -DGTE
 BUILDDIR = build/widgets
 
 #MODULES   := bases_classes base_types tests util
-MODULES   := base_types base_classes util tests
+MODULES   := base_types base_classes util tests tests/base_types_test tests/region_test errors region
 SRC_DIR   := $(addprefix src/,$(MODULES))
 BUILD_DIR := $(addprefix build/,$(MODULES))
 EXE_DIR   := exe

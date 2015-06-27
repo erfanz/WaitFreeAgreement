@@ -7,35 +7,30 @@
  *
  */
 
-#include "LogEntryTest.hpp"
-#include "PointerTest.hpp"
-#include "KeyValueTest.hpp"
-#include "DependencyTest.hpp"
+#include "base_types_test/LogEntryTest.hpp"
+#include "base_types_test/PointerTest.hpp"
+#include "base_types_test/KeyValueTest.hpp"
+#include "base_types_test/DependencyTest.hpp"
+#include "region_test/LocalRegionContextTest.hpp"
 
+#include <functional>	// std::function
+#include <vector>
 
+template <typename T>
+void appendVector(std::vector<T> &mainVec, const std::vector<T> &toBeAppendedVec) {
+	mainVec.insert(mainVec.end(), toBeAppendedVec.begin(), toBeAppendedVec.end());
+}
 
 int main() {
-	PointerTest::test_construct();
-	PointerTest::test_serialize();
-	PointerTest::test_deserialize();
-	PointerTest::test_getTotalSize();
-	PointerTest::test_toString();
+	std::vector<std::function<void()>> allTestFunctions;
+	appendVector(allTestFunctions, PointerTest::getFunctionList());
+	appendVector(allTestFunctions, KeyValueTest::getFunctionList());
+	appendVector(allTestFunctions, DependencyTest::getFunctionList());
+	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
 
-	KeyValueTest::test_constructor();
-	KeyValueTest::test_serialize();
-	KeyValueTest::test_deserialize();
-	KeyValueTest::test_getTotalSize();
-	KeyValueTest::test_toString();
-
-	DependencyTest::test_constructor();
-	DependencyTest::test_serialize();
-	DependencyTest::test_deserialize();
-	DependencyTest::test_toString();
-
-	LogEntryTest::test_constructor();
-	LogEntryTest::test_serialize();
-	LogEntryTest::test_deserialize();
-	LogEntryTest::test_calculateEntrySize();
+	for (std::size_t i = 0; i < allTestFunctions.size(); i++){
+		allTestFunctions.at(i)();
+	}
 
 	std::cout << std::endl << "All tests passed!" << std::endl;
 	return 0;

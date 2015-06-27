@@ -8,11 +8,22 @@
  */
 
 #include "DependencyTest.hpp"
-#include "../base_types/Pointer.hpp"
 #include <assert.h>
 #include <sstream>      // std::ostringstream, std::istringstream
 
 #define CLASS_NAME	"DependencyTest"
+
+std::vector<std::function<void()>> DependencyTest::functionList {
+	test_constructor,
+	test_serialize,
+	test_deserialize,
+	test_toString
+};
+
+std::vector<std::function<void()>>& DependencyTest::getFunctionList() {
+	//return PointerTest::functionList;
+	return functionList;
+}
 
 void DependencyTest::test_constructor() {
 	TestBase::printMessage(CLASS_NAME, __func__);

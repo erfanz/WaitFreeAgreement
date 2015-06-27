@@ -8,12 +8,23 @@
  */
 
 #include "PointerTest.hpp"
-#include "TestBase.hpp"
-#include "../base_types/Pointer.hpp"
 #include <sstream>      // std::ostringstream, std::istringstream
 #include <assert.h>
 
+
 #define CLASS_NAME	"PointerTest"
+
+std::vector<std::function<void()>> PointerTest::functionList {
+	test_construct,
+	test_serialize,
+	test_deserialize,
+	test_getTotalSize
+};
+
+std::vector<std::function<void()>>& PointerTest::getFunctionList() {
+	//return PointerTest::functionList;
+	return functionList;
+}
 
 void PointerTest::test_construct() {
 	TestBase::printMessage(CLASS_NAME, __func__);

@@ -10,11 +10,19 @@
 #ifndef POINTERTEST_HPP_
 #define POINTERTEST_HPP_
 
-#include "TestBase.hpp"
+#include "../TestBase.hpp"
+#include "../../base_types/Pointer.hpp"
+#include <functional>	// std::function
+#include <vector>
+
 
 
 class PointerTest : public TestBase{
+private:
+	static std::vector<std::function<void()>> functionList;
 public:
+	static std::vector<std::function<void()>>& getFunctionList();
+
 	static void test_construct();
 	static void test_serialize();
 	static void test_deserialize();

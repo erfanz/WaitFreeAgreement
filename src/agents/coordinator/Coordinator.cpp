@@ -28,10 +28,10 @@ Coordinator::~Coordinator() {
 ErrorType Coordinator::applyChange(Change &change, TID tID){
 	LogEntry entry;
 	Pointer entryPointer;
-	createNewPointer(change, entryPointer);
-	makeNewLogEntry(change, entryPointer, entry);
-	propagateLogEntry(entry);
-	publishChanges(entry);
+	TestError(createNewPointer(change, entryPointer), errorHandler);
+	TestError(makeNewLogEntry(change, entryPointer, entry), errorHandler);
+	TestError(propagateLogEntry(entry), errorHandler);
+	TestError(publishChanges(entry), errorHandler);
 }
 
 ErrorType Coordinator::createNewPointer(Change &change, Pointer &pointer) {
@@ -40,24 +40,28 @@ ErrorType Coordinator::createNewPointer(Change &change, Pointer &pointer) {
 
 	freeBufferOffset += entrySize;	// moving forward the free buffer head
 
-	return ERROR::SUCCESS;
+	return error::SUCCESS;
 }
 
 ErrorType Coordinator::makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry &entry) const{
 	bool isSerialized = false;
 	entry.setAll(change.getDependencies(), change.getUpdates(), entryPointer, isSerialized);
-	return ERROR::SUCCESS;
+	return error::SUCCESS;
 }
 
 ErrorType Coordinator::propagateLogEntry(LogEntry &entry){
 	for (size_t i = 0; i < memoryServerCtxs.size(); i++) {
 		memoryServerCtxs.at(i).writeLogEntry(entry);
 	}
-	return ERROR::SUCCESS;
+	return error::SUCCESS;
 }
 
 ErrorType Coordinator::publishChanges(LogEntry &entry){
-	return ERROR::SUCCESS;
+	return error::SUCCESS;
+}
+
+void Coordinator::errorHandler(ErrorType eType) {
+	;
 }
 
 //int Coordinator::readByKey(const Key key, const SCN scn, const TID tid){
