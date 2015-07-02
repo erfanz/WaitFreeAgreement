@@ -28,7 +28,7 @@ std::vector<std::function<void()>>& DependencyTest::getFunctionList() {
 void DependencyTest::test_constructor() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	int bucketID = 10;
+	size_t bucketID = 10;
 	Pointer p = Pointer::makePointer(0x1000000000000001);
 
 	Dependency d(bucketID, p);
@@ -39,7 +39,7 @@ void DependencyTest::test_constructor() {
 void DependencyTest::test_serialize() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	int bucketID = 10;
+	size_t bucketID = 10;
 	Pointer p = Pointer::makePointer(0x1abcdef001102201);
 
 	Dependency d(bucketID, p);
@@ -56,7 +56,7 @@ void DependencyTest::test_serialize() {
 void DependencyTest::test_deserialize() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	int bucketID = 10;
+	size_t bucketID = 10;
 	Pointer p = Pointer::makePointer(0x1abcdef001102201);
 
 	Dependency d(bucketID, p);
@@ -75,7 +75,7 @@ void DependencyTest::test_deserialize() {
 void DependencyTest::test_toString() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
-	int bucketID = 10;
+	size_t bucketID = 10;
 	Pointer p = Pointer::makePointer(0x1abcdef001102201);
 
 	Dependency d(bucketID, p);

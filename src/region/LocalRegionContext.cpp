@@ -10,18 +10,20 @@
 #include "LocalRegionContext.hpp"
 #include <cstring>	// std::memcpy()
 
-LocalRegionContext::LocalRegionContext() {
-	// TODO Auto-generated constructor stub
+LocalRegionContext::LocalRegionContext(void* buffer) {
+	this->buffer_ = buffer;
+
 }
 
 
-ErrorType LocalRegionContext::read(void* destinationBuffer, const void* sourceBuffer, std::size_t length) {
-	std::memcpy(destinationBuffer, sourceBuffer, length);
+ErrorType LocalRegionContext::read(void* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length) {
+	// we are doing byte offset, so it's safe to cast the (void *) to (char *)
+	std::memcpy(destinationBuffer, ((char *)buffer_) + sourceBufferOffset, length);
 	return error::SUCCESS;
 }
 
-ErrorType LocalRegionContext::write(const void* sourceBuffer, void* destinationBuffer, std::size_t length) {
-	std::memcpy(destinationBuffer, sourceBuffer, length);
+ErrorType LocalRegionContext::write(const void* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length) {
+	std::memcpy(((char *)buffer_) + destinationBufferOffset, sourceBuffer, length);
 	return error::SUCCESS;
 }
 

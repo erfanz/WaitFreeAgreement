@@ -13,35 +13,34 @@
 #include <sstream>      // std::ostringstream
 #include <bitset>        // std::bitset
 
-
-Pointer::Pointer(){
+Pointer::Pointer() {
 	;
 }
 
-Pointer::Pointer(coordinator_num_t coordinatorNum, generation_num_t generationNum, entry_size_t length, offset_t offset){
-	this->coordinatorNum = coordinatorNum;
-	this->generationNum = generationNum;
-	this->length = length;
-	this->offset = offset;
+Pointer::Pointer(primitive::coordinator_num_t coordinatorNum, primitive::generation_num_t generationNum, primitive::entry_size_t length, primitive::offset_t offset){
+	this->coordinatorNum_ = coordinatorNum;
+	this->generationNum_ = generationNum;
+	this->length_ = length;
+	this->offset_ = offset;
 }
 
 void Pointer::serialize(std::ostream& stream) const{
 	uint64_t concat = 0ULL;
 
 	// concatenating the 'coordinatorNum' and shifting
-	concat |= coordinatorNum;
+	concat |= coordinatorNum_;
 	concat <<= 8;
 
 	// concatenating the 'generationNum' and shifting
-	concat |= generationNum;
+	concat |= generationNum_;
 	concat <<= 16;
 
 	// concatenating the 'length' and shifting
-	concat |= length;
+	concat |= length_;
 	concat <<= 32;
 
 	// concatenating the 'offset'. there is no need for shifting
-	concat |= offset;
+	concat |= offset_;
 
 	// stream << std::hex << std::setfill('0') << std::setw(16) << concat;
 
@@ -51,16 +50,15 @@ void Pointer::serialize(std::ostream& stream) const{
 
 void Pointer::doDeserialize(std::istream& stream, Pointer &p){
 	uint64_t concat;
-	//stream >> std::hex >> concat;
 	std::string binary_str;
 	stream >> binary_str;
 
 	concat = utilities::binary_string_to_ull(binary_str);
 
-	p.coordinatorNum = (coordinator_num_t) (concat >> 56);
-	p.generationNum = (generation_num_t)( (concat << 8) >> 56 );
-	p.length = (entry_size_t)( (concat << 16) >> 48 );
-	p.offset = (offset_t)( (concat << 32) >> 32 );
+	p.coordinatorNum_ = (primitive::coordinator_num_t) (concat >> 56);
+	p.generationNum_ = (primitive::generation_num_t)( (concat << 8) >> 56 );
+	p.length_ = (primitive::entry_size_t)( (concat << 16) >> 48 );
+	p.offset_ = (primitive::offset_t)( (concat << 32) >> 32 );
 }
 
 std::string Pointer::toString() const{
@@ -69,69 +67,73 @@ std::string Pointer::toString() const{
 	return os.str();
 }
 
+std::string Pointer::toHexString() const{
+	std::string output = "";
+	output += std::string(utilities::ToString<int>((int)coordinatorNum_)) + "|"
+			+ utilities::ToString<int>((int)generationNum_) + "|"
+			+ utilities::ToString<primitive::entry_size_t>(length_) + "|"
+			+ utilities::ToString<primitive::offset_t>(offset_);
+
+	return output;
+}
+
 void Pointer::fromString(std::string serialized, Pointer &p){
 	std::istringstream is(serialized);
 	doDeserialize(is, p);
 }
 
-Pointer Pointer::makePointer(pointer_size_t input){
-	coordinator_num_t coordinatorNum = (coordinator_num_t) (input >> 56);
-	generation_num_t generationNum = (generation_num_t)( (input << 8) >> 56 );
-	entry_size_t length = (entry_size_t)( (input << 16) >> 48 );
-	offset_t offset = (offset_t)( (input << 32) >> 32 );
+Pointer Pointer::makePointer(const primitive::pointer_size_t input){
+	primitive::coordinator_num_t coordinatorNum = (primitive::coordinator_num_t) (input >> 56);
+	primitive::generation_num_t generationNum = (primitive::generation_num_t)( (input << 8) >> 56 );
+	primitive::entry_size_t length = (primitive::entry_size_t)( (input << 16) >> 48 );
+	primitive::offset_t offset = (primitive::offset_t)( (input << 32) >> 32 );
 
 	Pointer p(coordinatorNum, generationNum, length, offset);
 	return p;
 }
 
-const coordinator_num_t Pointer::getCoordinatorNum() const{
-	return coordinatorNum;
+const primitive::coordinator_num_t Pointer::getCoordinatorNum() const{
+	return coordinatorNum_;
 }
 
-const generation_num_t Pointer::getGenerationNum() const{
-	return generationNum;
+const primitive::generation_num_t Pointer::getGenerationNum() const{
+	return generationNum_;
 }
 
-const entry_size_t Pointer::getLength() const{
-	return length;
+const primitive::entry_size_t Pointer::getLength() const{
+	return length_;
 }
 
-const offset_t Pointer::getOffset() const{
-	return offset;
+const primitive::offset_t Pointer::getOffset() const{
+	return offset_;
 }
 
 size_t Pointer::getTotalSize(){
 	return 64;
 }
 
-void Pointer::setCoordinatorNum(coordinator_num_t coordinatorNum) {
-	this->coordinatorNum = coordinatorNum;
+void Pointer::setCoordinatorNum(const primitive::coordinator_num_t coordinatorNum) {
+	this->coordinatorNum_ = coordinatorNum;
 }
 
-void Pointer::setGenerationNum(generation_num_t generationNum) {
-	this->generationNum = generationNum;
+void Pointer::setGenerationNum(const primitive::generation_num_t generationNum) {
+	this->generationNum_ = generationNum;
 }
 
-void Pointer::setLength(entry_size_t length) {
-	this->length = length;
+void Pointer::setLength(const primitive::entry_size_t length) {
+	this->length_ = length;
 }
 
-void Pointer::setOffset(offset_t offset) {
-	this->offset = offset;
+void Pointer::setOffset(const primitive::offset_t offset) {
+	this->offset_ = offset;
 }
 
-void Pointer::setAll(coordinator_num_t coordinatorNum, generation_num_t generationNum, entry_size_t length, offset_t offset) {
-	this->coordinatorNum = coordinatorNum;
-	this->generationNum = generationNum;
-	this->length = length;
-	this->offset = offset;
-}
 
 bool Pointer::isEqual(const Pointer &pointer) const {
-	if (this->coordinatorNum == pointer.coordinatorNum
-			&& this->generationNum == pointer.generationNum
-			&& this->length == pointer.length
-			&& this->offset == pointer.offset)
+	if (this->coordinatorNum_ == pointer.coordinatorNum_
+			&& this->generationNum_ == pointer.generationNum_
+			&& this->length_ == pointer.length_
+			&& this->offset_ == pointer.offset_)
 		return true;
 	else return false;
 }

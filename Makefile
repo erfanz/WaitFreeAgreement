@@ -1,11 +1,13 @@
 CC = g++
 LD = g++
 
-CPPFLAGS = -std=gnu++14 -Wall -Wconversion -Wextra -Wno-ignored-qualifiers -DGTEST_OS_CYGWIN=1
+CPPFLAGS = -std=gnu++14 -g -Wall -Wconversion -Wextra -Wno-ignored-qualifiers -DGTEST_OS_CYGWIN=1
 BUILDDIR = build/widgets
 
-#MODULES   := bases_classes base_types tests util
-MODULES   := base_types base_classes util tests tests/base_types_test tests/region_test errors region
+TEST_MODULES	:= unit_tests unit_tests/base_types_test unit_tests/region_test
+AGENTS_MODULES	:= agents/coordinator agents/garbage_collector agents/memory_server 
+MODULES   := base_types agents util errors region $(AGENTS_MODULES) $(TEST_MODULES)
+#MODULES   := base_types agents util errors region $(AGENTS_MODULES) execution_test
 SRC_DIR   := $(addprefix src/,$(MODULES))
 BUILD_DIR := $(addprefix build/,$(MODULES))
 EXE_DIR   := exe

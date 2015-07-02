@@ -13,11 +13,14 @@
 #include "AbstractRegionContext.hpp"
 
 class LocalRegionContext: public AbstractRegionContext {
-public:
-	LocalRegionContext();
+private:
+	void* buffer_;
 
-	ErrorType read(void* destinationBuffer, const void* sourceBuffer, std::size_t length);
-	ErrorType write(const void* sourceBuffer, void* destinationBuffer, std::size_t length);
+public:
+	LocalRegionContext(void* buffer);
+
+	ErrorType read(void* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length);
+	ErrorType write(const void* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length);
 
 //	template< class T >
 //	ErrorType CAS(uintptr_t sourceBuffer, std::size_t length, T expectedValue, T swapValue, uintptr_t destinationBuffer);

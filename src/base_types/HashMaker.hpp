@@ -16,11 +16,11 @@
 
 class HashMaker {
 private:
-	size_t hashedKey;
+	size_t hashedKey_;
 
 public:
-	HashMaker(std::string id) {hashedKey =  std::hash<std::string>()(id);}
-	size_t getHashed() const {return hashedKey;}
+	HashMaker(std::string id) {hashedKey_ =  std::hash<std::string>()(id);}
+	size_t getHashed() const {return hashedKey_;}
 
 };
 

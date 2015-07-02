@@ -14,15 +14,14 @@
 #include <iomanip>      // std::setw
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
 
-LogEntry::LogEntry(){
+LogEntry::LogEntry() {
 	;
 }
-
 LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> updates, Pointer currentP, bool serialized){
-	this->dependencies = dependencies;
-	this->updates = updates;
-	this->currentP = currentP;
-	this->serialized = serialized;
+	this->dependencies_ = dependencies;
+	this->updates_ = updates;
+	this->currentP_ = currentP;
+	this->serialized_ = serialized;
 }
 
 void LogEntry::serialize(std::ostream& stream) const{
@@ -36,47 +35,41 @@ void LogEntry::serialize(std::ostream& stream) const{
 	 * - (g) Updates[KVCnt]
 	 * - (h) Pointer
 	 */
-	std::string str = currentP.toString() + " ";
+
+	std::string str = currentP_.toString() + " ";
 	str += utilities::ToString<bool>(isSerialized()) + " ";
-	str += utilities::ToString<size_t>(dependencies.size()) + " ";
+	str += utilities::ToString<size_t>(dependencies_.size()) + " ";
 
-	for (size_t i=0; i < dependencies.size(); i++)
-		str += utilities::ToString<int>(dependencies[i].getBucketID()) + " ";
+	for (size_t i=0; i < dependencies_.size(); i++)
+		str += utilities::ToString<size_t>(dependencies_[i].getBucketID()) + " ";
 
-	for (size_t i=0; i < dependencies.size(); i++)
-		str += dependencies[i].getPointer().toString() + " ";
+	for (size_t i=0; i < dependencies_.size(); i++)
+		str += dependencies_[i].getPointer().toString() + " ";
 
-	str += utilities::ToString<size_t>(updates.size()) + " ";
+	str += utilities::ToString<size_t>(updates_.size()) + " ";
 
-	for (size_t i=0; i < updates.size(); i++)
-		str += updates[i].toString() + " ";
+	for (size_t i=0; i < updates_.size(); i++)
+		str += updates_[i].toString() + " ";
 
-	str += currentP.toString();
+	str += currentP_.toString();
 	stream << str;
 }
 
 
 void LogEntry::setDependencies(const std::vector<Dependency>& dependencies) {
-	this->dependencies = dependencies;
+	this->dependencies_ = dependencies;
 }
 
 void LogEntry::setUpdates(const std::vector<KeyValue>& updates) {
-	this->updates = updates;
+	this->updates_ = updates;
 }
 
 void LogEntry::setCurrentP(const Pointer& currentP) {
-	this->currentP = currentP;
+	this->currentP_ = currentP;
 }
 
 void LogEntry::setSerialized(bool serialized) {
-	this->serialized = serialized;
-}
-
-void LogEntry::setAll(const std::vector<Dependency>& dependencies, const std::vector<KeyValue>& updates, const Pointer& currentP, bool serialized) {
-	this->dependencies = dependencies;
-	this->updates = updates;
-	this->currentP = currentP;
-	this->serialized = serialized;
+	this->serialized_ = serialized;
 }
 
 void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
@@ -87,36 +80,36 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	stream >> pointer_start;
 
 	/* - IsSerialized 						*/
-	stream >> entry.serialized;
+	stream >> entry.serialized_;
 
 	/* - DependencyCnt						*/
 	stream >> dependencyCnt;
 
 	/* - Dependency_pucketID[DependencyCnt]
 	   - Dependency_pointer[DependencyCnt] 	*/
-	entry.dependencies = std::vector<Dependency> (dependencyCnt);
-	int bid;
-	for (int i=0; i < dependencyCnt; i++){
+	entry.dependencies_ = std::vector<Dependency> (dependencyCnt);
+	size_t bid;
+	for (int i = 0; i < dependencyCnt; i++){
 		stream >> bid;
-		entry.dependencies.at(i).setBucketID(bid);
+		entry.dependencies_.at(i).setBucketID(bid);
 	}
 
 	std::string p;
-	for (int i=0; i < dependencyCnt; i++){
+	for (int i = 0; i < dependencyCnt; i++){
 		stream >> p;
 		Pointer dep_pointer;
 		Pointer::fromString(p, dep_pointer);
-		entry.dependencies.at(i).setPointer(dep_pointer);
+		entry.dependencies_.at(i).setPointer(dep_pointer);
 	}
 
 	/* - UpdateCnt								*/
 	stream >> updateCnt;
 
 	/* - Updates[KVCnt]					*/
-	Pointer::fromString(pointer_start, entry.currentP);
-	entry.updates = std::vector<KeyValue> (updateCnt);
-	for (int i=0; i < updateCnt; i++){
-		KeyValue::deserialize(stream, entry.updates[i]);
+	Pointer::fromString(pointer_start, entry.currentP_);
+	entry.updates_ = std::vector<KeyValue> (updateCnt);
+	for (int i = 0; i < updateCnt; i++){
+		KeyValue::deserialize(stream, entry.updates_[i]);
 	}
 
 	/* - Pointer							*/
@@ -128,18 +121,18 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 }
 
 const std::vector<Dependency>& LogEntry::getDependencies() const{
-	return dependencies;
+	return dependencies_;
 }
 
 const std::vector<KeyValue>& LogEntry::getUpdates() const {
-	return updates;
+	return updates_;
 }
 
 const Pointer LogEntry::getCurrentP() const {
-	return currentP;
+	return currentP_;
 }
 
-entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates) {
+primitive::entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates) {
 	size_t size = 0;
 	size +=  Pointer::getTotalSize() + 1;								// for (a) Pointer to the current log entry, and the space after
 
@@ -157,29 +150,49 @@ entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependency> &depende
 		size += updates.at(i).getTotalSize() + 1;						// for (g) Updates[] and the space after
 
 	size += Pointer::getTotalSize();
-	entry_size_t entrySize = entry_size_t (size);
+	primitive::entry_size_t entrySize = primitive::entry_size_t (size);
 	return entrySize;
 }
 
 bool LogEntry::isSerialized() const {
-	return serialized;
+	return serialized_;
 }
 
 bool LogEntry::isEqual(const LogEntry &entry) const {
-	if (! currentP.isEqual(entry.getCurrentP())
-			|| serialized != entry.isSerialized()
-			|| updates.size() != entry.getUpdates().size()
-			|| dependencies.size() != entry.getDependencies().size())
+	if (! currentP_.isEqual(entry.getCurrentP())
+			|| serialized_ != entry.isSerialized()
+			|| updates_.size() != entry.getUpdates().size()
+			|| dependencies_.size() != entry.getDependencies().size())
 		return false;
 
-	for (size_t i = 0; i < dependencies.size(); i++) {
-		if (! dependencies.at(i).isEqual(entry.getDependencies().at(i)))
+	for (size_t i = 0; i < dependencies_.size(); i++) {
+		if (! dependencies_.at(i).isEqual(entry.getDependencies().at(i)))
 			return false;
 	}
 
-	for (size_t i = 0; i < updates.size(); i++) {
-		if (! updates.at(i).isEqual(entry.getUpdates().at(i)))
+	for (size_t i = 0; i < updates_.size(); i++) {
+		if (! updates_.at(i).isEqual(entry.getUpdates().at(i)))
 			return false;
 	}
 	return true;
+}
+
+bool LogEntry::getUpdateIfExists(const Key &key, Value &value) const {
+	for (size_t i = 0; i < updates_.size(); i++) {
+		if (updates_.at(i).getKey().isEqual(key)) {
+			value = updates_.at(i).getValue();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool LogEntry::getDependencyIfExists(const size_t bucketID, Pointer &pointer) const {
+	for (size_t i = 0; i < dependencies_.size(); i++) {
+		if (dependencies_.at(i).getBucketID() == bucketID) {
+			pointer = dependencies_.at(i).getPointer();
+			return true;
+		}
+	}
+	return false;
 }

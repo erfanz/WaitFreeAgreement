@@ -14,23 +14,23 @@ Value::Value(){
 }
 
 Value::Value(std::string content){
-	this->content = content;
+	this->content_ = content;
 }
 
 const std::string& Value::getContent() const{
-	return content;
+	return content_;
 }
 
 uint32_t Value::getSize() const{
-	return size;
+	return size_;
 }
 
 void Value::setContent(const std::string &content) {
-	this->content = content;
+	this->content_ = content;
 }
 
 bool Value::isEqual(const Value &v) const{
-	if (this->content.compare(v.getContent()) == 0)
+	if (this->content_.compare(v.getContent()) == 0)
 		return true;
 	else return false;
 }

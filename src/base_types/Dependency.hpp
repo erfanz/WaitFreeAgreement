@@ -17,16 +17,16 @@
 
 class Dependency : public Serializable <Dependency> {
 private:
-	int bucketID;
-	Pointer pointer;
+	size_t bucketID_;
+	Pointer pointer_;
 
 public:
 	Dependency();
-	Dependency(int bucketID, Pointer pointer);
-	const int getBucketID() const;
+	Dependency(size_t bucketID, Pointer pointer);
+	const size_t getBucketID() const;
 	const Pointer getPointer() const;
-	void setBucketID(int bucketID);
-	void setPointer(Pointer p);
+	void setBucketID(const size_t bucketID);
+	void setPointer(const Pointer p);
 	bool isEqual(const Dependency &) const;
 	std::string toString() const;
 	virtual void serialize(std::ostream& stream) const;

@@ -14,8 +14,8 @@
 
 class Value {
 private:
-	uint32_t size;
-	std::string content;
+	uint32_t size_;
+	std::string content_;
 
 public:
 	Value();

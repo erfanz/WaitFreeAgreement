@@ -1,5 +1,5 @@
 /*
- *  PointerTest.hpp
+ *  LogEntryTest.hpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Jun 22, 2015
@@ -7,27 +7,27 @@
  *
  */
 
-#ifndef POINTERTEST_HPP_
-#define POINTERTEST_HPP_
+#ifndef LOGENTRYTEST_HPP_
+#define LOGENTRYTEST_HPP_
 
 #include "../TestBase.hpp"
-#include "../../base_types/Pointer.hpp"
+#include "../../base_types/LogEntry.hpp"
 #include <functional>	// std::function
 #include <vector>
 
 
-
-class PointerTest : public TestBase{
+class LogEntryTest : public TestBase{
 private:
 	static std::vector<std::function<void()>> functionList;
 public:
 	static std::vector<std::function<void()>>& getFunctionList();
+	static LogEntry* makeLogEntry();
 
-	static void test_construct();
+	static void test_constructor();
 	static void test_serialize();
 	static void test_deserialize();
-	static void test_getTotalSize();
-	static void test_toString();
+	static void test_findKey();
+	static void test_calculateEntrySize();
 };
 
-#endif /* POINTERTEST_HPP_ */
+#endif /* LOGENTRYTEST_HPP_ */

@@ -15,28 +15,29 @@ Dependency::Dependency() {
 	;
 }
 
-Dependency::Dependency(int bucketID, Pointer pointer) {
-	this->bucketID = bucketID;
-	this->pointer = pointer;
+Dependency::Dependency(size_t bucketID, Pointer pointer) {
+	this->bucketID_ = bucketID;
+	this->pointer_ = pointer;
 }
 
-const int Dependency::getBucketID() const {
-	return bucketID;
+const size_t Dependency::getBucketID() const {
+	return bucketID_;
 }
+
 const Pointer Dependency::getPointer() const {
-	return pointer;
+	return pointer_;
 }
 
-void Dependency::setBucketID(int bucketID) {
-	this->bucketID = bucketID;
+void Dependency::setBucketID(const size_t bucketID) {
+	this->bucketID_ = bucketID;
 }
 
-void Dependency::setPointer(Pointer p) {
-	this->pointer = p;
+void Dependency::setPointer(const Pointer p) {
+	this->pointer_ = p;
 }
 
 bool Dependency::isEqual(const Dependency &dependency) const{
-	if (bucketID == dependency.bucketID && pointer.isEqual(dependency.pointer))
+	if (bucketID_ == dependency.bucketID_ && pointer_.isEqual(dependency.pointer_))
 			return true;
 	return false;
 }
@@ -48,11 +49,11 @@ std::string Dependency::toString() const{
 }
 
 void Dependency::serialize(std::ostream& stream) const{
-	std::string str = utilities::ToString<int>(bucketID) + " " + pointer.toString();
+	std::string str = utilities::ToString<size_t>(bucketID_) + " " + pointer_.toString();
 	stream << str;
 }
 void Dependency::doDeserialize(std::istream& stream, Dependency &d){
-	std::string p;
-	stream >> d.bucketID >> p;
-	Pointer::fromString(p, d.pointer);
+	std::string pointerString;
+	stream >> d.bucketID_ >> pointerString;
+	Pointer::fromString(pointerString, d.pointer_);
 }

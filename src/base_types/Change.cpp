@@ -11,8 +11,8 @@
 
 Change::Change(std::vector<KeyValue> updates, std::vector<Dependency> dependencies)
 {
-	this->updates = updates;
-	this->dependencies = dependencies;
+	this->updates_ = updates;
+	this->dependencies_ = dependencies;
 }
 
 Change::~Change() {
@@ -20,9 +20,9 @@ Change::~Change() {
 }
 
 const std::vector<Dependency>& Change::getDependencies() const {
-	return dependencies;
+	return dependencies_;
 }
 
 const std::vector<KeyValue>& Change::getUpdates() const {
-	return updates;
+	return updates_;
 }

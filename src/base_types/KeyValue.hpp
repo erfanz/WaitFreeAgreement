@@ -22,8 +22,8 @@
 
 class KeyValue : public Serializable<KeyValue>{
 private:
-	Key key;
-	Value value;
+	Key key_;
+	Value value_;
 
 public:
 	KeyValue();

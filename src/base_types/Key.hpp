@@ -16,7 +16,7 @@
 
 class Key{
 private:
-	std::string id;
+	std::string id_;
 
 public:
 	Key();

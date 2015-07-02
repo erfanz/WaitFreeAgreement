@@ -15,17 +15,24 @@
 #include <string>
 #include <bitset>
 #include <sstream>	// for stringstream
+#include <iomanip>	// std::setw()
+#include "../config.hpp"
+
+
 
 
 namespace utilities {
-
 	#if(DEBUG_ENABLED)
-	# define DEBUG_COUT(x) do { std::cout << x << std::endl; } while( false )
-	# define DEBUG_CERR(x) do { std::cerr << x << std::endl; } while( false )
+	#define DEBUG_COUT(className,funcName,message) do { \
+			std::string header = std::string("[") + className + ":" + funcName + "] "; \
+			std::cout << std::setw(30) << std::left << header << message << std::endl; \
+		} while( false )
+	#define DEBUG_CERR(x) do { std::cerr << x << std::endl; } while( false )
 	#else
-	# define DEBUG_COUT(x) do {} while (false)
-	# define DEBUG_CERR(x) do {} while (false)
+	#define DEBUG_COUT(className,funcName,message) do {} while (false)
+	#define DEBUG_CERR(x) do {} while (false)
 	#endif
+
 
 	#define TEST_NZ(x) do { if ( (x)) die("error: " #x " failed (returned non-zero).");  } while (0)
 	#define TEST_Z(x)  do { if (!(x)) die("error: " #x " failed (returned zero/null)."); } while (0)

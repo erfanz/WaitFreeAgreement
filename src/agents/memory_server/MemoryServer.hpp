@@ -9,14 +9,19 @@
 #ifndef AGENTS_MEMORY_SERVER_MEMORYSERVER_HPP_
 #define AGENTS_MEMORY_SERVER_MEMORYSERVER_HPP_
 
+#include <stdint.h>
+
 class MemoryServer{
+private:
+	uint64_t* bucketValid_;
+	uint64_t* bucketHash_;
+	char** logJournals_;
+
 public:
-	uint64_t keyValid[HASH_SIZE];
-	uint64_t keyHash[HASH_SIZE];
-	char journals[COORDINATOR_CNT][LOG_JOURNAL_SIZE];
-
 	MemoryServer();
-};
+	void getMemoryHandlers(uint64_t** bucketValid, uint64_t** bucketHash, char*** logJournal);
 
+	~MemoryServer();
+};
 
 #endif /* AGENTS_MEMORY_SERVER_MEMORYSERVER_HPP_ */

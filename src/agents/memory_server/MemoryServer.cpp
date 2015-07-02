@@ -8,17 +8,44 @@
  */
 
 #include "MemoryServer.hpp"
+#include "../../config.hpp"
 
-//MemoryServer::MemoryServer(){
-//	// initializing the hashBuffer
-//	for (int i = 0; i < HASH_SIZE; i++) {
-//		keyValid[i] = (uint64_t) 0;
-//		keyHash[i] = (uint64_t) 0;
-//	}
-//
-//	// initializing the journals
-//	for (int i = 0; i < COORDINATOR_CNT; i++)
-//		for (int j = 0; j < LOG_JOURNAL_SIZE; j++)
-//			journals[i][j] = 0;
-//}
-//
+
+MemoryServer::MemoryServer(){
+	bucketValid_	= new uint64_t[config::HASH_SIZE];
+	bucketHash_		= new uint64_t[config::HASH_SIZE];
+	logJournals_	= new char*[config::COORDINATOR_CNT];
+
+
+	// initializing the hashBuffer
+	for (size_t i = 0; i < config::HASH_SIZE; i++) {
+		bucketValid_[i] = (uint64_t) 0;
+		bucketHash_[i] = (uint64_t) 0;
+	}
+
+	// initializing the journals
+	for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
+		logJournals_[i] = new char[config::LOG_JOURNAL_SIZE];
+		for (size_t j = 0; j < config::LOG_JOURNAL_SIZE; j++)
+			logJournals_[i][j] = 0;
+	}
+}
+
+void MemoryServer::getMemoryHandlers(uint64_t** bucketValid  __attribute__ ((unused)),
+		uint64_t**  bucketHash __attribute__ ((unused)),
+		char*** logJournal __attribute__ ((unused)) ) {
+
+	bucketValid = &this->bucketValid_;
+	bucketHash	= &this->bucketHash_;
+	logJournal	= &this->logJournals_;
+}
+
+MemoryServer::~MemoryServer(){
+	delete[] bucketValid_;
+	delete[] bucketHash_;
+
+	for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
+		delete [] logJournals_[i];
+	}
+	delete [] logJournals_;
+}

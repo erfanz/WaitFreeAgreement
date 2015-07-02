@@ -12,7 +12,7 @@
 #include "KeyValue.hpp"
 #include "Pointer.hpp"
 #include "Dependency.hpp"
-
+#include "PrimitiveTypes.hpp"	// primitive::entry_size_t
 
 #include <iostream>
 #include <string>
@@ -23,14 +23,15 @@
 
 class LogEntry : public Serializable<LogEntry>{
 private:
-	std::vector<Dependency> dependencies;
-	std::vector<KeyValue> updates;
-	Pointer currentP;
-	bool serialized;
+	std::vector<Dependency> dependencies_;
+	std::vector<KeyValue> updates_;
+	Pointer currentP_;
+	bool serialized_;
 
 
 public:
 	LogEntry();
+
 	LogEntry(std::vector<Dependency>, std::vector<KeyValue> updates, Pointer currentP, bool serialized);
 
 	const std::vector<Dependency>& getDependencies() const;
@@ -40,14 +41,15 @@ public:
 	void setDependencies(const std::vector<Dependency>& dependencies);
 	void setSerialized(bool serialized);
 	void setUpdates(const std::vector<KeyValue>& updates);
-	void setAll(const std::vector<Dependency>& dependencies, const std::vector<KeyValue>& updates, const Pointer& currentP, bool serialized);
 
 
-	static entry_size_t calculateEntrySize(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates);
+	static primitive::entry_size_t calculateEntrySize(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates);
 	bool isSerialized() const;
 	bool isEqual(const LogEntry &entry) const;
 	virtual void serialize(std::ostream& stream) const;
 	static void doDeserialize(std::istream&, LogEntry &);
+	bool getUpdateIfExists(const Key &key, Value &value) const;
+	bool getDependencyIfExists(const size_t bucketID, Pointer &pointer) const;
 
 };
 

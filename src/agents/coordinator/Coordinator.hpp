@@ -14,34 +14,37 @@
 #include "../../base_types/LogEntry.hpp"
 #include "../../base_types/KeyValue.hpp"
 #include "../../base_types/Change.hpp"
+#include "../../base_types/PrimitiveTypes.hpp"	// primitive::XXX
 #include "../../errors/Error.hpp"		// to return error from functions
+#include "../../base_types/TID.hpp"
+#include "../../base_types/SCN.hpp"
+#include "../../util/utils.hpp"
 #include <vector>
 
 typedef error::ErrorType ErrorType;
-typedef error::TestError TestError;
 
 
-class Coordinator {
+class Coordinator : public error::Throwable{
 private:
-	const coordinator_num_t coordinatorID;
-	generation_num_t generationNum;
-	offset_t freeBufferOffset;
-	std::vector<MemoryServerContext> memoryServerCtxs;
-	const MemoryServerContext *localMemoryServerCtx;
+	const primitive::coordinator_num_t coordinatorID_;
+	primitive::generation_num_t generationNum_;
+	primitive::offset_t freeBufferOffset_;
+	std::vector<MemoryServerContext> memoryServerCtxs_;
+	MemoryServerContext *localMemoryServerCtx_;
+
 	ErrorType propagateLogEntry(LogEntry &entry);
-//	const MemoryServerContext* findLocalMemoryServer();
-	ErrorType createNewPointer(Change &change, Pointer &pointer);
-	ErrorType makeNewLogEntry (Change &change, Pointer &entryPointer, LogEntry &entry) const;
+	ErrorType createNewPointer(Change &change, Pointer *pointer);
+	ErrorType makeNewLogEntry (Change &change, Pointer &entryPointer, LogEntry *entry) const;
 	ErrorType publishChanges(LogEntry &entry);
-	void errorHandler(ErrorType eType);
+	void errorHandler(const ErrorType eType);
 
 
 public:
-	Coordinator(coordinator_num_t coordinatorID);
+	Coordinator(primitive::coordinator_num_t coordinatorID);
 	~Coordinator();
-	// int connectToMemoryServers(std::vector<MemoryServer> memoryServers);
+	ErrorType connectToMemoryServers(std::vector<MemoryServerContext> memoryServerCtxs);
 	ErrorType applyChange(Change &change, TID tID);
-	// int readByKey(const Key key, const SCN scn, const TID tid);
+	ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue);
 
 };
 

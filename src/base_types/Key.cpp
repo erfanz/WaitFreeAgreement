@@ -14,21 +14,21 @@ Key::Key() {
 	;
 }
 Key::Key(std::string id) {
-	this->id = id;
+	this->id_ = id;
 }
 
 const std::string& Key::getId() const {
-	return id;
+	return id_;
 }
 
 void Key::setId(const std::string& id) {
-	this->id = id;
+	this->id_ = id;
 }
 
 HashMaker Key::hashKey() const {
-	return HashMaker(id);
+	return HashMaker(id_);
 }
 
 bool Key::isEqual(const Key &key) const {
-	return (key.id.compare(this->id) == 0) ? true : false;
+	return (key.id_.compare(this->id_) == 0) ? true : false;
 }

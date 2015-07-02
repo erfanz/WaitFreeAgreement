@@ -12,17 +12,17 @@
 
 class SCN {
 private:
-	uint64_t id;
+	uint64_t id_;
 
 public:
-	SCN(uint64_t id){this->id = id;}
-	uint64_t getId() const {return id;}
+	SCN(uint64_t id){this->id_ = id;}
+	uint64_t getId() const {return id_;}
 
 	bool isSCNCompatible(const SCN missedSCN) const;
 };
 
 bool SCN::isSCNCompatible(const SCN missedSCN) const{
-	if (missedSCN.id == 0 || missedSCN.id > this->id)
+	if (missedSCN.id_ == 0 || missedSCN.id_ > this->id_)
 		return true;
 	else return false;
 }

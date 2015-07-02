@@ -18,7 +18,8 @@ std::vector<std::function<void()>> PointerTest::functionList {
 	test_construct,
 	test_serialize,
 	test_deserialize,
-	test_getTotalSize
+	test_getTotalSize,
+	test_toHexString
 };
 
 std::vector<std::function<void()>>& PointerTest::getFunctionList() {
@@ -87,4 +88,12 @@ void PointerTest::test_toString(){
 	Pointer p = Pointer::makePointer(input);
 	std::string expectedResult = "0001000000000001000000010001000000000000000000000000000000000001";
 	assert(p.toString().compare(expectedResult) == 0);
+}
+
+void PointerTest::test_toHexString(){
+	TestBase::printMessage(CLASS_NAME, __func__);
+	Pointer *p = new Pointer(12, 16, 123, 9876);
+
+	std::string expectedResult =  "12|16|123|9876";
+	assert(p->toHexString().compare(expectedResult) == 0);
 }

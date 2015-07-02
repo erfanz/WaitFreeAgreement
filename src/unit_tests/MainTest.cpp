@@ -27,6 +27,8 @@ int main() {
 	appendVector(allTestFunctions, KeyValueTest::getFunctionList());
 	appendVector(allTestFunctions, DependencyTest::getFunctionList());
 	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
+	appendVector(allTestFunctions, LocalRegionContextTest::getFunctionList());
+
 
 	for (std::size_t i = 0; i < allTestFunctions.size(); i++){
 		allTestFunctions.at(i)();

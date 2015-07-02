@@ -15,24 +15,24 @@ KeyValue::KeyValue(){
 
 
 KeyValue::KeyValue(Key k, Value v) {
-	this->key = k;
-	this->value = v;
+	this->key_ = k;
+	this->value_ = v;
 }
 
 
 const Key& KeyValue::getKey() const{
-	return key;
+	return key_;
 }
 
 const Value& KeyValue::getValue() const {
-	return value;
+	return value_;
 }
 
 size_t KeyValue::getTotalSize() const {
 	size_t size = 0;
-	size += key.getId().size();
+	size += key_.getId().size();
 	size += 1;		// one space between the key and value
-	size += value.getContent().size();
+	size += value_.getContent().size();
 	return size;
 }
 
@@ -43,15 +43,15 @@ std::string KeyValue::toString() const{
 }
 
 bool KeyValue::isEqual(const KeyValue &kv) const {
-	if (key.isEqual(kv.getKey())
-			&& value.isEqual(kv.getValue()))
+	if (key_.isEqual(kv.getKey())
+			&& value_.isEqual(kv.getValue()))
 		return true;
 	else return false;
 }
 
 void KeyValue::serialize(std::ostream& stream) const{
-	stream << key.getId() << " "
-			<< value.getContent();
+	stream << key_.getId() << " "
+			<< value_.getContent();
 }
 
 void KeyValue::doDeserialize(std::istream& stream, KeyValue &kv){
@@ -60,6 +60,6 @@ void KeyValue::doDeserialize(std::istream& stream, KeyValue &kv){
 
 	stream >> id >> content;
 
-	kv.key.setId(id);
-	kv.value.setContent(content);
+	kv.key_.setId(id);
+	kv.value_.setContent(content);
 }
