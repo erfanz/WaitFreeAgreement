@@ -22,6 +22,7 @@ public:
 	static std::vector<std::function<void()>>& getFunctionList();
 	static void test_read_and_write();
 	static void test_read_and_write_with_logentry();
+	static void test_CAS();
 };
 
 #endif /* LOCALREGIONCONTEXTTEST_HPP_ */

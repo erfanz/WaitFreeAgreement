@@ -21,7 +21,8 @@
 namespace error{
 	enum ErrorType {
 		SUCCESS = 0,
-		KEY_NOT_IN_THE_LOG_ENTRY
+		KEY_NOT_IN_THE_LOG_ENTRY,
+		CAS_FAILED
 	};
 
 	class Throwable;

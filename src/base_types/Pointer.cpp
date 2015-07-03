@@ -77,7 +77,7 @@ std::string Pointer::toHexString() const{
 	return output;
 }
 
-void Pointer::fromString(std::string serialized, Pointer &p){
+void Pointer::fromBinaryString(std::string serialized, Pointer &p){
 	std::istringstream is(serialized);
 	doDeserialize(is, p);
 }

@@ -13,20 +13,23 @@
 #include "../../config.hpp"
 
 MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLocal){
-	uint64_t**	bucketHash;
-	uint64_t**	bucketValid;
-	char***		logJournal;
-	memoryServer.getMemoryHandlers(bucketValid, bucketHash, logJournal);
+	std::atomic<uint64_t>*	bucketHash;
+	std::atomic<uint64_t>*	bucketValid;
+	std::atomic<char>**	logJournal;
+	memoryServer.getMemoryHandlers(&bucketValid, &bucketHash, &logJournal);
+
+	std::atomic<uint64_t>*	bucketHash2;
+	LocalRegionContext<uint64_t>* bucketHash2_ = new LocalRegionContext<uint64_t>(bucketHash2);
 
 	this->isLocal_ = isLocal;
 	if (isLocal_) {
-		bucketHash_ = new LocalRegionContext(bucketHash);
-		bucketValid_ = new LocalRegionContext(bucketValid);
-		logJournals_ = new LocalRegionContext* [config::COORDINATOR_CNT];
+		bucketHash_ = new LocalRegionContext<uint64_t>(bucketHash);
+		//bucketValid_ = new LocalRegionContext<uint64_t>(bucketValid);
+		//logJournals_ = new LocalRegionContext<char>* [config::COORDINATOR_CNT];
 
-		for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
-			logJournals_[i] = new LocalRegionContext(logJournal[i]);
-		}
+		//for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
+		//	logJournals_[i] = new LocalRegionContext<char>(logJournal[i]);
+		//}
 	}
 }
 //
@@ -93,11 +96,10 @@ ErrorType MemoryServerContext::readLogEntry(const Pointer &pointer, LogEntry &en
 }
 
 ErrorType MemoryServerContext::readBucketHash(const HashMaker &hashedKey, Pointer &pointer){
-	char readBuffer[sizeof(primitive::pointer_size_t)];
-	primitive::offset_t offset = (primitive::offset_t)(hashedKey.getHashed() * sizeof(primitive::pointer_size_t));
+	primitive::pointer_size_t	readBuffer[1];
+	primitive::offset_t			offset = (primitive::offset_t)(hashedKey.getHashed());
 
 	bucketHash_->read(readBuffer, offset, sizeof(primitive::pointer_size_t));
-	std::string tempStr(readBuffer);
-	Pointer::fromString(tempStr, pointer);
+	pointer = Pointer::makePointer(readBuffer[0]);
 	return error::SUCCESS;
 }

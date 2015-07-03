@@ -69,15 +69,17 @@ ErrorType Coordinator::makeNewLogEntry(Change &change, Pointer &entryPointer, Lo
 
 ErrorType Coordinator::propagateLogEntry(LogEntry &entry){
 	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
-		DEBUG_COUT(CLASS_NAME, __func__, "Copied log entry to memory server " << i << " by coordinator " << (int)coordinatorID_);
-
 		memoryServerCtxs_.at(i).writeLogEntry(coordinatorID_, entry);
+		DEBUG_COUT(CLASS_NAME, __func__, "Copied log entry to memory server " << i << " by coordinator " << (int)coordinatorID_);
 	}
 	return error::SUCCESS;
 }
 
 ErrorType Coordinator::publishChanges(LogEntry &entry){
-	(void)entry;	// TODO: must be removed
+	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
+		DEBUG_COUT(CLASS_NAME, __func__, "Copied log entry to memory server " << i << " by coordinator " << (int)coordinatorID_);
+		memoryServerCtxs_.at(i).writeLogEntry(coordinatorID_, entry);
+	}
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Published the change by coordinator " << (int)coordinatorID_);
 

@@ -12,9 +12,9 @@
 
 
 MemoryServer::MemoryServer(){
-	bucketValid_	= new uint64_t[config::HASH_SIZE];
-	bucketHash_		= new uint64_t[config::HASH_SIZE];
-	logJournals_	= new char*[config::COORDINATOR_CNT];
+	bucketValid_	= new std::atomic<uint64_t>[config::HASH_SIZE];
+	bucketHash_		= new std::atomic<uint64_t>[config::HASH_SIZE];
+	logJournals_	= new std::atomic<char>*[config::COORDINATOR_CNT];
 
 
 	// initializing the hashBuffer
@@ -25,15 +25,15 @@ MemoryServer::MemoryServer(){
 
 	// initializing the journals
 	for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
-		logJournals_[i] = new char[config::LOG_JOURNAL_SIZE];
+		logJournals_[i] = new std::atomic<char>[config::LOG_JOURNAL_SIZE];
 		for (size_t j = 0; j < config::LOG_JOURNAL_SIZE; j++)
 			logJournals_[i][j] = 0;
 	}
 }
 
-void MemoryServer::getMemoryHandlers(uint64_t** bucketValid  __attribute__ ((unused)),
-		uint64_t**  bucketHash __attribute__ ((unused)),
-		char*** logJournal __attribute__ ((unused)) ) {
+void MemoryServer::getMemoryHandlers(std::atomic<uint64_t>** bucketValid  __attribute__ ((unused)),
+		std::atomic<uint64_t>**  bucketHash __attribute__ ((unused)),
+		std::atomic<char>*** logJournal __attribute__ ((unused)) ) {
 
 	bucketValid = &this->bucketValid_;
 	bucketHash	= &this->bucketHash_;

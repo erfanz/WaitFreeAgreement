@@ -10,15 +10,20 @@
 #include "LocalRegionContextTest.hpp"
 #include "../base_types_test/LogEntryTest.hpp"	// for makeLogEntry()
 #include "../../base_types/LogEntry.hpp"	// for makeLogEntry()
+#include "../../errors/Error.hpp"
+#include "../../base_types/PrimitiveTypes.hpp"
 
 #include <assert.h>
 #include <string>
+#include <vector>
+#include <atomic>
 
 #define CLASS_NAME	"LocalRegionContextTest"
 
 std::vector<std::function<void()>> LocalRegionContextTest::functionList {
 	test_read_and_write,
-	test_read_and_write_with_logentry
+	test_read_and_write_with_logentry,
+	test_CAS
 };
 
 std::vector<std::function<void()>>& LocalRegionContextTest::getFunctionList() {
@@ -28,8 +33,8 @@ std::vector<std::function<void()>>& LocalRegionContextTest::getFunctionList() {
 
 void LocalRegionContextTest::test_read_and_write() {
 	TestBase::printMessage(CLASS_NAME, __func__);
-	char buffer[64];
-	LocalRegionContext region(buffer);
+	std::atomic<char> buffer[64];
+	LocalRegionContext<char> region(buffer);
 
 	std::string input = "this is just a test";
 
@@ -48,8 +53,8 @@ void LocalRegionContextTest::test_read_and_write_with_logentry() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 
 	// Create the region
-	char buffer[1024];
-	LocalRegionContext region(buffer);
+	std::atomic<char> buffer[1024];
+	LocalRegionContext<char> region(buffer);
 
 	// Create the log entry
 	LogEntry *entry = LogEntryTest::makeLogEntry();
@@ -72,4 +77,45 @@ void LocalRegionContextTest::test_read_and_write_with_logentry() {
 	LogEntry::deserialize(is, result);
 
 	assert(entry->isEqual(result) == true);
+}
+
+void LocalRegionContextTest::test_CAS() {
+	TestBase::printMessage(CLASS_NAME, __func__);
+
+	// Create the region
+	std::atomic<uint64_t> buffer[10];
+	for (size_t i = 0; i < 10; i++)
+		buffer[10] = i;
+	LocalRegionContext<uint64_t> region(buffer);
+
+	// Making a snapshot of the current initial values
+	std::vector<size_t> initialV(buffer, buffer + 10);
+
+
+	// Apply successful CAS on all elements (// incrementing all elements by one)
+	for (primitive::offset_t i = 0; i < 10; i++) {
+		uint64_t expected = initialV.at(i);
+		uint64_t desired = initialV.at(i) + 1;
+		ErrorType e = region.CAS(&expected, desired, i);
+		assert(e == error::SUCCESS);
+		assert(expected == initialV.at(i));
+	}
+
+	// Now apply unsuccessful CAS on all elements
+	for (primitive::offset_t i = 0; i < 10; i++) {
+		uint64_t expected = initialV.at(i);
+		uint64_t desired = initialV.at(i) - 1;
+		ErrorType e = region.CAS(&expected, desired, i);
+		assert(e == error::CAS_FAILED);
+		assert(expected == initialV.at(i) + 1);
+	}
+
+	// Now apply successful CAS on all elements (decrement all elements by one)
+	for (primitive::offset_t i = 0; i < 10; i++) {
+		uint64_t expected = initialV.at(i) + 1;
+		uint64_t desired = initialV.at(i);
+		ErrorType e = region.CAS(&expected, desired, i);
+		assert(e == error::SUCCESS);
+		assert(buffer[i] == initialV.at(i));
+	}
 }

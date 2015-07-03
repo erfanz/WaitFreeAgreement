@@ -98,7 +98,7 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	for (int i = 0; i < dependencyCnt; i++){
 		stream >> p;
 		Pointer dep_pointer;
-		Pointer::fromString(p, dep_pointer);
+		Pointer::fromBinaryString(p, dep_pointer);
 		entry.dependencies_.at(i).setPointer(dep_pointer);
 	}
 
@@ -106,7 +106,7 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	stream >> updateCnt;
 
 	/* - Updates[KVCnt]					*/
-	Pointer::fromString(pointer_start, entry.currentP_);
+	Pointer::fromBinaryString(pointer_start, entry.currentP_);
 	entry.updates_ = std::vector<KeyValue> (updateCnt);
 	for (int i = 0; i < updateCnt; i++){
 		KeyValue::deserialize(stream, entry.updates_[i]);

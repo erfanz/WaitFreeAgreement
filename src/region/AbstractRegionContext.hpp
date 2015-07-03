@@ -14,15 +14,14 @@
 #include "../base_types/PrimitiveTypes.hpp"
 #include <cstddef>	// for std::size_t
 
-
 typedef error::ErrorType ErrorType;
 
 
-//template <typename T>
+template <typename T>
 class AbstractRegionContext {
 public:
-	virtual ErrorType read(void* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length) = 0;
-	virtual ErrorType write(const void* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length) = 0;
+	virtual ErrorType read(T* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length) = 0;
+	virtual ErrorType write(const T* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length) = 0;
 
 //	virtual ErrorType CAS(uintptr_t sourceBuffer, std::size_t length, T expectedValue, T swapValue, uintptr_t destinationBuffer) = 0;
 
@@ -31,7 +30,8 @@ public:
 	virtual ~AbstractRegionContext() = 0;
 };
 
-inline AbstractRegionContext::~AbstractRegionContext() {
+template <typename T>
+inline AbstractRegionContext<T>::~AbstractRegionContext() {
 	// empty
 }
 

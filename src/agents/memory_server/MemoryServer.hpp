@@ -10,16 +10,18 @@
 #define AGENTS_MEMORY_SERVER_MEMORYSERVER_HPP_
 
 #include <stdint.h>
+#include <atomic>
 
 class MemoryServer{
 private:
-	uint64_t* bucketValid_;
-	uint64_t* bucketHash_;
-	char** logJournals_;
+	std::atomic<uint64_t>* bucketValid_;
+	std::atomic<uint64_t>* bucketHash_;
+	std::atomic<char>** logJournals_;
 
 public:
 	MemoryServer();
-	void getMemoryHandlers(uint64_t** bucketValid, uint64_t** bucketHash, char*** logJournal);
+	void getMemoryHandlers(std::atomic<uint64_t>** bucketValid, std::atomic<uint64_t>** bucketHash, std::atomic<char>*** logJournal);
+
 
 	~MemoryServer();
 };

@@ -22,9 +22,9 @@ typedef error::ErrorType ErrorType;
 class MemoryServerContext {
 private:
 	bool isLocal_;
-	LocalRegionContext* bucketHash_;
-	LocalRegionContext* bucketValid_;
-	LocalRegionContext** logJournals_;
+	LocalRegionContext<uint64_t>* bucketHash_;
+	LocalRegionContext<uint64_t>* bucketValid_;
+	LocalRegionContext<char>** logJournals_;
 
 
 public:

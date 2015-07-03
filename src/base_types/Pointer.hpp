@@ -46,7 +46,7 @@ public:
 	std::string toString() const;
 	std::string toHexString() const;
 	bool isEqual(const Pointer &pointer) const;
-	static void fromString(std::string serialized, Pointer &pointer);
+	static void fromBinaryString(std::string serialized, Pointer &pointer);
 	static void doDeserialize(std::istream& stream, Pointer &p);
 };
 

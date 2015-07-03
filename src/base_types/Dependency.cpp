@@ -55,5 +55,5 @@ void Dependency::serialize(std::ostream& stream) const{
 void Dependency::doDeserialize(std::istream& stream, Dependency &d){
 	std::string pointerString;
 	stream >> d.bucketID_ >> pointerString;
-	Pointer::fromString(pointerString, d.pointer_);
+	Pointer::fromBinaryString(pointerString, d.pointer_);
 }
