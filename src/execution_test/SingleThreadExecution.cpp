@@ -10,6 +10,7 @@
 #include "../agents/coordinator/Coordinator.hpp"
 #include "../agents/coordinator/MemoryServerContext.hpp"
 #include "../agents/memory_server/MemoryServer.hpp"
+#include "../base_types/PrimitiveTypes.hpp"
 #include "../config.hpp"
 #include <vector>
 
@@ -20,12 +21,12 @@ void createMemoryServers(std::vector<MemoryServer*> &memoryServers){
 }
 
 void createCoordinators(std::vector<Coordinator*> &coordinators) {
-	for (size_t i = 0; i < config::COORDINATOR_CNT; i++)
+	for (primitive::coordinator_num_t i = 0; i < config::COORDINATOR_CNT; i++)
 		coordinators.push_back(new Coordinator (i));
 }
 
 void connectCoordsToMSs(std::vector<Coordinator*> &coordinators, std::vector<MemoryServer*> &memoryServers) {
-	for (size_t c = 0; c < config::COORDINATOR_CNT; c++) {
+	for (primitive::coordinator_num_t c = 0; c < config::COORDINATOR_CNT; c++) {
 		std::vector<MemoryServerContext> memoryServerCtxs;
 		for (size_t m = 0; m < config::MEMORY_SERVER_CNT; m++) {
 			MemoryServerContext* mscTmp = new MemoryServerContext (*memoryServers.at(m), true);
@@ -36,13 +37,13 @@ void connectCoordsToMSs(std::vector<Coordinator*> &coordinators, std::vector<Mem
 	}
 }
 
-void constructChange(Change *change) {
+void constructChange(Change **change __attribute__((unused))) {
 	std::vector<Dependency> dependencies;
-	int b1 = 10;
-	Pointer p1 = Pointer::makePointer(0x1011001000000011);
+	int b1 = 0;
+	Pointer p1 = Pointer::makePointer(0x0000000000000000);
 	Dependency dep1(b1, p1);
-	int b2 = 11;
-	Pointer p2 = Pointer::makePointer(0x0101000100000001);
+	int b2 = 2;
+	Pointer p2 = Pointer::makePointer(0x0000000000000000);
 	Dependency dep2(b2, p2);
 	dependencies.push_back(dep1);
 	dependencies.push_back(dep2);
@@ -57,7 +58,7 @@ void constructChange(Change *change) {
 	updates.push_back(kv1);
 	updates.push_back(kv2);
 
-	change = new Change(updates, dependencies);
+	*change = new Change(updates, dependencies);
 }
 
 int main () {
@@ -70,16 +71,20 @@ int main () {
 	connectCoordsToMSs(coordinators, memoryServers);
 
 	Change* change;
-	constructChange(change);
+	constructChange(&change);
 
 	TID tid;
 	tid.id = 12;
 	coordinators.at(0)->applyChange(*change, tid);
 
 
-
 	// let's see if the change is visible
-	//coordinators.at(0)->readByKey()
+	Key k1("k101");
+	Value value;
+	SCN scn(1);
+	coordinators.at(0)->readByKey(k1, scn, tid, value);
+
+	std::cout << "The content of key " << k1.getId() << " is " << value.getContent() << std::endl;
 
 
 	// deleting objects

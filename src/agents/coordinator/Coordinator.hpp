@@ -26,16 +26,17 @@ typedef error::ErrorType ErrorType;
 
 class Coordinator : public error::Throwable{
 private:
-	const primitive::coordinator_num_t coordinatorID_;
-	primitive::generation_num_t generationNum_;
-	primitive::offset_t freeBufferOffset_;
-	std::vector<MemoryServerContext> memoryServerCtxs_;
-	MemoryServerContext *localMemoryServerCtx_;
+	const primitive::coordinator_num_t	coordinatorID_;
+	primitive::generation_num_t			generationNum_;
+	primitive::offset_t					freeBufferOffset_;
+	std::vector<MemoryServerContext>	memoryServerCtxs_;
+	size_t								localMSCtxIndex_;
 
 	ErrorType propagateLogEntry(LogEntry &entry);
-	ErrorType createNewPointer(Change &change, Pointer *pointer);
-	ErrorType makeNewLogEntry (Change &change, Pointer &entryPointer, LogEntry *entry) const;
+	ErrorType createNewPointer(Change &change, Pointer **pointer);
+	ErrorType makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry **entry) const;
 	ErrorType publishChanges(LogEntry &entry);
+	ErrorType serialize(LogEntry &entry);
 	void errorHandler(const ErrorType eType);
 
 

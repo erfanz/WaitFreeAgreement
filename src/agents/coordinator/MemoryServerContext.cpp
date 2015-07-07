@@ -11,6 +11,7 @@
 #include "../../base_types/PrimitiveTypes.hpp"
 #include "../../base_types/Pointer.hpp"
 #include "../../config.hpp"
+#include "../../util/utils.hpp"	// for toString();
 
 MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLocal){
 	std::atomic<uint64_t>*	bucketHash;
@@ -18,18 +19,18 @@ MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLoca
 	std::atomic<char>**	logJournal;
 	memoryServer.getMemoryHandlers(&bucketValid, &bucketHash, &logJournal);
 
-	std::atomic<uint64_t>*	bucketHash2;
-	LocalRegionContext<uint64_t>* bucketHash2_ = new LocalRegionContext<uint64_t>(bucketHash2);
+	//std::atomic<uint64_t>*	bucketHash2;
+	//LocalRegionContext<uint64_t>* bucketHash2_ = new LocalRegionContext<uint64_t>(bucketHash2);
 
 	this->isLocal_ = isLocal;
 	if (isLocal_) {
 		bucketHash_ = new LocalRegionContext<uint64_t>(bucketHash);
-		//bucketValid_ = new LocalRegionContext<uint64_t>(bucketValid);
-		//logJournals_ = new LocalRegionContext<char>* [config::COORDINATOR_CNT];
+		bucketValid_ = new LocalRegionContext<uint64_t>(bucketValid);
+		logJournals_ = new LocalRegionContext<char>* [config::COORDINATOR_CNT];
 
-		//for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
-		//	logJournals_[i] = new LocalRegionContext<char>(logJournal[i]);
-		//}
+		for (size_t i = 0; i < config::COORDINATOR_CNT; i++) {
+			logJournals_[i] = new LocalRegionContext<char>(logJournal[i]);
+		}
 	}
 }
 //
@@ -99,7 +100,40 @@ ErrorType MemoryServerContext::readBucketHash(const HashMaker &hashedKey, Pointe
 	primitive::pointer_size_t	readBuffer[1];
 	primitive::offset_t			offset = (primitive::offset_t)(hashedKey.getHashed());
 
+	std::cout << "pointer: " << readBuffer[0] << std::endl;
+
 	bucketHash_->read(readBuffer, offset, sizeof(primitive::pointer_size_t));
+
 	pointer = Pointer::makePointer(readBuffer[0]);
+
+	return error::SUCCESS;
+}
+
+ErrorType MemoryServerContext::swapBucketHash(const size_t bucketID, const Pointer &expectedHead, const Pointer &newHead, Pointer &actualCurrentHead) {
+	primitive::offset_t offset = (primitive::offset_t)(bucketID);
+	primitive::pointer_size_t expected	= expectedHead.toULL();
+	primitive::pointer_size_t desired	= newHead.toULL();
+
+	ErrorType eType = bucketHash_->CAS(&expected, desired, offset);
+	if (eType == error::SUCCESS){
+		// TODO: if we know for sure that (expected == expectedHead.toULL()),
+		// then instead of the following line, we can write actualCurrentHead = expectedHead;
+		actualCurrentHead = expectedHead;
+	}
+	else
+		actualCurrentHead = Pointer::makePointer(expected);
+
+	return eType;
+}
+
+ErrorType MemoryServerContext::markSerialized(const primitive::coordinator_num_t cID, const LogEntry &entry) {
+	std::size_t 		writeLength	= 1;	// we only want to change one byte, which is the serialization flag
+	primitive::offset_t	offset		= (primitive::offset_t)(entry.getCurrentP().getOffset()
+			+ Pointer::getTotalSize() + 1);		// since we first store the pointer and a whitespace before the serialized flag.
+
+	const std::string& trueFlag = utilities::ToString<bool>(true);
+	const char* cstr = trueFlag.c_str();
+
+	logJournals_[cID]->write(cstr, offset, writeLength);
 	return error::SUCCESS;
 }

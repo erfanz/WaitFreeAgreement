@@ -42,7 +42,7 @@ public:
 	void setLength(const primitive::entry_size_t length);
 	void setOffset(const primitive::offset_t offset);
 
-
+	primitive::pointer_size_t toULL() const;
 	std::string toString() const;
 	std::string toHexString() const;
 	bool isEqual(const Pointer &pointer) const;

@@ -13,13 +13,14 @@
 #include <stdint.h>
 #include <functional>
 #include <string>
+#include "../config.hpp"
 
 class HashMaker {
 private:
 	size_t hashedKey_;
 
 public:
-	HashMaker(std::string id) {hashedKey_ =  std::hash<std::string>()(id);}
+	HashMaker(std::string id) {hashedKey_ =  std::hash<std::string>()(id) % config::HASH_SIZE ;}
 	size_t getHashed() const {return hashedKey_;}
 
 };

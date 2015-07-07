@@ -18,15 +18,12 @@ public:
 	SCN(uint64_t id){this->id_ = id;}
 	uint64_t getId() const {return id_;}
 
-	bool isSCNCompatible(const SCN missedSCN) const;
+	bool isSCNCompatible(const SCN missedSCN) const {
+		if (missedSCN.id_ == 0 || missedSCN.id_ > this->id_)
+			return true;
+		else return false;
+	}
 };
-
-bool SCN::isSCNCompatible(const SCN missedSCN) const{
-	if (missedSCN.id_ == 0 || missedSCN.id_ > this->id_)
-		return true;
-	else return false;
-}
-
 
 
 #endif /* BASE_TYPES_SCN_HPP_ */

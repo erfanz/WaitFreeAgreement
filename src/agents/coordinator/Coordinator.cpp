@@ -10,6 +10,7 @@
 #include "Coordinator.hpp"
 #include "../../base_types/HashMaker.hpp"
 
+
 #define CLASS_NAME	"Coord"
 
 
@@ -26,7 +27,7 @@ Coordinator::~Coordinator() {
 
 ErrorType Coordinator::connectToMemoryServers(std::vector<MemoryServerContext> memoryServerCtxs){
 	this->memoryServerCtxs_ = memoryServerCtxs;
-	this->localMemoryServerCtx_ = &memoryServerCtxs.at(coordinatorID_);
+	this->localMSCtxIndex_ = coordinatorID_;
 	DEBUG_COUT(CLASS_NAME, __func__, "Memory server contexts are all set for coordinator " << (int)coordinatorID_);
 
 	return error::SUCCESS;
@@ -38,31 +39,33 @@ ErrorType Coordinator::applyChange(Change &change, TID tID){
 	LogEntry *entry = NULL;
 	Pointer *entryPointer = NULL;
 
-	error::Throwable::testError(createNewPointer(change, entryPointer));
-	error::Throwable::testError(makeNewLogEntry(change, *entryPointer, entry));
+	error::Throwable::testError(createNewPointer(change, &entryPointer));
+	error::Throwable::testError(makeNewLogEntry(change, *entryPointer, &entry));
 	error::Throwable::testError(propagateLogEntry(*entry));
 	error::Throwable::testError(publishChanges(*entry));
+	error::Throwable::testError(serialize(*entry));
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Change successfully applied by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::createNewPointer(Change &change, Pointer *pointer) {
+ErrorType Coordinator::createNewPointer(Change &change, Pointer **pointer) {
+
 	primitive::entry_size_t entrySize = LogEntry::calculateEntrySize(change.getDependencies(), change.getUpdates());
-	pointer = new Pointer(coordinatorID_, generationNum_, entrySize, freeBufferOffset_);
+	*pointer = new Pointer(coordinatorID_, generationNum_, entrySize, freeBufferOffset_);
 
 	freeBufferOffset_ += entrySize;	// moving forward the free buffer head
 
-	DEBUG_COUT(CLASS_NAME, __func__, "Pointer created (" << pointer->toHexString() << ") by coordinator " << (int)coordinatorID_);
+	DEBUG_COUT(CLASS_NAME, __func__, "Pointer created (" << (*pointer)->toHexString() << ") by coordinator " << (int)coordinatorID_);
 
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry *entry __attribute__((unused))) const{
+ErrorType Coordinator::makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry **entry __attribute__((unused))) const{
 	bool isSerialized = false;
 
-	entry = new LogEntry(change.getDependencies(), change.getUpdates(), entryPointer, isSerialized);
-	DEBUG_COUT(CLASS_NAME, __func__, "Log entry created with pointer = " << entryPointer.toHexString() << " by coordinator " << (int)coordinatorID_);
+	*entry = new LogEntry(change.getDependencies(), change.getUpdates(), entryPointer, isSerialized);
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry created with pointer = " << (*entry)->getCurrentP().toHexString() << " by coordinator " << (int)coordinatorID_);
 
 	return error::SUCCESS;
 }
@@ -76,13 +79,31 @@ ErrorType Coordinator::propagateLogEntry(LogEntry &entry){
 }
 
 ErrorType Coordinator::publishChanges(LogEntry &entry){
+	std::vector<Dependency> dependencies = entry.getDependencies();
+	Pointer actualCurrentHead;
+
 	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
-		DEBUG_COUT(CLASS_NAME, __func__, "Copied log entry to memory server " << i << " by coordinator " << (int)coordinatorID_);
-		memoryServerCtxs_.at(i).writeLogEntry(coordinatorID_, entry);
+		for (size_t d = 0; d < dependencies.size(); d++){
+			DEBUG_COUT(CLASS_NAME, __func__, "CAS the hash bucket " << dependencies.at(d).getBucketID() << " in memory server " << i << " by coordinator " << (int)coordinatorID_);
+
+			ErrorType eType = memoryServerCtxs_.at(i).swapBucketHash(dependencies.at(d).getBucketID(), dependencies.at(d).getPointer(), entry.getCurrentP(), actualCurrentHead);
+			if (eType != error::SUCCESS) {
+				std::cerr << "CAS failed!!" << std::endl;
+				return eType;
+			}
+		}
 	}
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Published the change by coordinator " << (int)coordinatorID_);
 
+	return error::SUCCESS;
+}
+
+ErrorType Coordinator::serialize(LogEntry &entry) {
+	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
+		memoryServerCtxs_.at(i).markSerialized(coordinatorID_, entry);
+		DEBUG_COUT(CLASS_NAME, __func__, "The new log entry marked serialized on memory server " << i << " by coordinator " << (int)coordinatorID_);
+	}
 	return error::SUCCESS;
 }
 
@@ -96,10 +117,13 @@ ErrorType Coordinator::readByKey(const Key key, const SCN scn, const TID tid, Va
 	Pointer p;
 	Value v;
 
-	error::Throwable::testError(localMemoryServerCtx_->readBucketHash(hashedKey, p));
+
+	error::Throwable::testError(memoryServerCtxs_.at(localMSCtxIndex_).readBucketHash(hashedKey, p));
+	DEBUG_COUT(CLASS_NAME, __func__, "Reading bucket hash for key " << key.getId() << " resulted pointer: " << p.toHexString() << " by coordinator " << (int)coordinatorID_);
+
 
 	while (true) {
-		error::Throwable::testError(localMemoryServerCtx_->readLogEntry(p, entry));
+		error::Throwable::testError(memoryServerCtxs_.at(localMSCtxIndex_).readLogEntry(p, entry));
 		if (entry.getDependencyIfExists(hashedKey.getHashed(), p) == true) {
 			continue;
 		}

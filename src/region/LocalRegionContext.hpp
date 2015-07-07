@@ -22,10 +22,10 @@ private:
 public:
 	LocalRegionContext(std::atomic<T>* buffer);
 
-	ErrorType read(T* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length);
-	ErrorType write(const T* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length);
+	ErrorType read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length);
+	ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length);
 
-	ErrorType CAS(T* expectedValue, T &desiredValue, primitive::offset_t sourceBufferOffset);
+	ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset);
 
 	ErrorType multicast();
 
@@ -45,22 +45,20 @@ LocalRegionContext<T>::LocalRegionContext(std::atomic<T>* buffer) {
 }
 
 template <typename T>
-ErrorType LocalRegionContext<T>::read(T* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length) {
-	// we are doing byte offset, so it's safe to cast the (void *) to (char *)
+ErrorType LocalRegionContext<T>::read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length) {
 	std::memcpy(destinationBuffer, buffer_ + sourceBufferOffset, length);
 	return error::SUCCESS;
 }
 
 template <typename T>
-ErrorType LocalRegionContext<T>::write(const T* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length) {
+ErrorType LocalRegionContext<T>::write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length) {
 	std::memcpy(buffer_ + destinationBufferOffset, sourceBuffer, length);
 	return error::SUCCESS;
 }
 
 template <typename T>
-ErrorType LocalRegionContext<T>::CAS(T* expectedValue, T &desiredValue, primitive::offset_t sourceBufferOffset) {
+ErrorType LocalRegionContext<T>::CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset) {
 	std::atomic<T>* comparingObj = buffer_ + sourceBufferOffset;
-
 	if (atomic_compare_exchange_strong(comparingObj, expectedValue, desiredValue) == true)
 		return error::SUCCESS;
 	else

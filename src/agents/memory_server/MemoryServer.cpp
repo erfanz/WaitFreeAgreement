@@ -35,9 +35,9 @@ void MemoryServer::getMemoryHandlers(std::atomic<uint64_t>** bucketValid  __attr
 		std::atomic<uint64_t>**  bucketHash __attribute__ ((unused)),
 		std::atomic<char>*** logJournal __attribute__ ((unused)) ) {
 
-	bucketValid = &this->bucketValid_;
-	bucketHash	= &this->bucketHash_;
-	logJournal	= &this->logJournals_;
+	*bucketValid = this->bucketValid_;
+	*bucketHash	= this->bucketHash_;
+	*logJournal	= this->logJournals_;
 }
 
 MemoryServer::~MemoryServer(){

@@ -25,22 +25,7 @@ Pointer::Pointer(primitive::coordinator_num_t coordinatorNum, primitive::generat
 }
 
 void Pointer::serialize(std::ostream& stream) const{
-	uint64_t concat = 0ULL;
-
-	// concatenating the 'coordinatorNum' and shifting
-	concat |= coordinatorNum_;
-	concat <<= 8;
-
-	// concatenating the 'generationNum' and shifting
-	concat |= generationNum_;
-	concat <<= 16;
-
-	// concatenating the 'length' and shifting
-	concat |= length_;
-	concat <<= 32;
-
-	// concatenating the 'offset'. there is no need for shifting
-	concat |= offset_;
+	primitive::pointer_size_t concat = toULL();
 
 	// stream << std::hex << std::setfill('0') << std::setw(16) << concat;
 
@@ -59,6 +44,27 @@ void Pointer::doDeserialize(std::istream& stream, Pointer &p){
 	p.generationNum_ = (primitive::generation_num_t)( (concat << 8) >> 56 );
 	p.length_ = (primitive::entry_size_t)( (concat << 16) >> 48 );
 	p.offset_ = (primitive::offset_t)( (concat << 32) >> 32 );
+}
+
+primitive::pointer_size_t Pointer::toULL() const{
+	primitive::pointer_size_t concat = 0ULL;
+
+	// concatenating the 'coordinatorNum' and shifting
+	concat |= coordinatorNum_;
+	concat <<= 8;
+
+	// concatenating the 'generationNum' and shifting
+	concat |= generationNum_;
+	concat <<= 16;
+
+	// concatenating the 'length' and shifting
+	concat |= length_;
+	concat <<= 32;
+
+	// concatenating the 'offset'. there is no need for shifting
+	concat |= offset_;
+
+	return concat;
 }
 
 std::string Pointer::toString() const{
@@ -109,7 +115,8 @@ const primitive::offset_t Pointer::getOffset() const{
 }
 
 size_t Pointer::getTotalSize(){
-	return 64;
+	// return sizeof(uint64_t);
+	return 64;	// TODO: since we're writing each pointer as a 64-character boolean sequence
 }
 
 void Pointer::setCoordinatorNum(const primitive::coordinator_num_t coordinatorNum) {
