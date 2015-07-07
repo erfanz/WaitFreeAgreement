@@ -13,6 +13,11 @@
 #include "../base_types/PrimitiveTypes.hpp"
 #include "../config.hpp"
 #include <vector>
+#include <map>
+
+std::map<size_t,uint64_t> bucketToPointerMap;	// stores where each bucket points to during the execution of the test.
+std::map<std::string,std::string> keyToValueMap;	// stores the value associated with any given key.
+std::map<std::string,size_t> keyToBucketMap;	// stores the bucketID associated with any given key.
 
 void createMemoryServers(std::vector<MemoryServer*> &memoryServers){
 	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++)
@@ -37,31 +42,41 @@ void connectCoordsToMSs(std::vector<Coordinator*> &coordinators, std::vector<Mem
 	}
 }
 
-void constructChange(Change **change __attribute__((unused))) {
-	std::vector<Dependency> dependencies;
-	int b1 = 0;
-	Pointer p1 = Pointer::makePointer(0x0000000000000000);
-	Dependency dep1(b1, p1);
-	int b2 = 2;
-	Pointer p2 = Pointer::makePointer(0x0000000000000000);
-	Dependency dep2(b2, p2);
-	dependencies.push_back(dep1);
-	dependencies.push_back(dep2);
-
+void constructChange(Change **change __attribute__((unused)), std::vector<std::string> updateKeys, std::vector<std::string> pureDependencies) {
 	std::vector<KeyValue> updates;
-	Key k1("k101");
-	Value v1("v101");
-	Key k2("k202");
-	Value v2("v202");
-	KeyValue kv1 (k1, v1);
-	KeyValue kv2 (k2, v2);
-	updates.push_back(kv1);
-	updates.push_back(kv2);
+	std::vector<Dependency> dependencies;
+	std::vector<std::string>::iterator it;
+
+	for (it = updateKeys.begin(); it != updateKeys.end(); ++it){
+		Key k(*it);
+		Value v(keyToValueMap.find((std::string)*it)->second);
+		KeyValue kv (k, v);
+		updates.push_back(kv);
+	}
+
+	for (it = pureDependencies.begin(); it != pureDependencies.end(); ++it){
+		size_t bucketID = keyToBucketMap.find((std::string)*it)->second;
+		uint64_t headPointer = bucketToPointerMap.find(bucketID)->second;
+		Pointer p = Pointer::makePointer(headPointer);
+		Dependency dep(bucketID, p);
+		dependencies.push_back(dep);
+	}
+
+	// adding the update keys as dependencies
+	for (it = updateKeys.begin(); it != updateKeys.end(); ++it){
+		size_t bucketID = keyToBucketMap.find((std::string)*it)->second;
+		uint64_t headPointer = bucketToPointerMap.find(bucketID)->second;
+		Pointer p = Pointer::makePointer(headPointer);
+		Dependency dep(bucketID, p);
+		dependencies.push_back(dep);
+	}
 
 	*change = new Change(updates, dependencies);
 }
 
 int main () {
+	Change* change;
+
 	std::vector<MemoryServer*> memoryServers;
 	createMemoryServers(memoryServers);
 
@@ -70,16 +85,47 @@ int main () {
 
 	connectCoordsToMSs(coordinators, memoryServers);
 
-	Change* change;
-	constructChange(&change);
+	// first initializing the map, so all the buckets are not pointing anywhere
+	for (size_t i = 0; i < config::HASH_SIZE; i++)
+		bucketToPointerMap.insert(std::pair<size_t,uint64_t>(i,0x0000000000000000) );
 
+	for (size_t i = 0; i < config::KEY_CNT; i++) {
+		std::string k = "k" + utilities::ToString<size_t>(i);
+		std::string v = "v" + utilities::ToString<size_t>(i);
+		keyToValueMap.insert(std::pair<std::string,std::string>(k,v) );
+
+		HashMaker h(k);
+		keyToBucketMap.insert(std::pair<std::string, size_t>(k,h.getHashed()) );
+	}
+
+	/* End of initialization
+	 * -----------------------------------------------------------------------------------------------
+	 * -----------------------------------------------------------------------------------------------
+	 */
+
+	std::vector<std::string> updateKeys;
+	std::vector<std::string> pureDependencies;
 	TID tid;
 	tid.id = 12;
+
+	updateKeys = {"k1", "k2"};
+	pureDependencies = {};
+	constructChange(&change, updateKeys, pureDependencies);
 	coordinators.at(0)->applyChange(*change, tid);
+
+	updateKeys = {"k5", "k2"};
+	pureDependencies = {"k1"};
+	constructChange(&change, updateKeys, pureDependencies);
+	coordinators.at(1)->applyChange(*change, tid);
+
+//	updateKeys = {"k1", "k2"};
+//	pureDependencies = {};
+//	constructChange(&change, updateKeys, pureDependencies);
+//	coordinators.at(1)->applyChange(*change, tid);
 
 
 	// let's see if the change is visible
-	Key k1("k101");
+	Key k1("k1");
 	Value value;
 	SCN scn(1);
 	coordinators.at(0)->readByKey(k1, scn, tid, value);

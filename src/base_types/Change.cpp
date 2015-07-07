@@ -8,6 +8,7 @@
  */
 
 #include "Change.hpp"
+#include "../util/utils.hpp"
 
 Change::Change(std::vector<KeyValue> updates, std::vector<Dependency> dependencies)
 {
@@ -25,4 +26,24 @@ const std::vector<Dependency>& Change::getDependencies() const {
 
 const std::vector<KeyValue>& Change::getUpdates() const {
 	return updates_;
+}
+
+const std::string Change::toString() const {
+	std::string str = "";
+	str += "Updates: \"";
+	for (size_t i = 0; i < updates_.size(); i++){
+		str += updates_.at(i).toString();
+		str += ", ";
+	}
+
+	str += "\", Dependencies: \"";
+
+	for (size_t i = 0; i < dependencies_.size(); i++){
+		str += utilities::ToString<size_t>(dependencies_.at(i).getBucketID()) + "(" + dependencies_.at(i).getPointer().toHexString() + ")";
+		str += ", ";
+	}
+	str += "\"";
+	std::cout << "there" << std::endl;
+
+	return str;
 }

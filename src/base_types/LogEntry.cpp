@@ -14,6 +14,8 @@
 #include <iomanip>      // std::setw
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
 
+#define CLASS_NAME	"Coord"
+
 LogEntry::LogEntry() {
 	;
 }
@@ -78,12 +80,15 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 
 	/* - Pointer to the current log entry 	*/
 	stream >> pointer_start;
+	//std::cout << "pointer_start " << pointer_start << std::endl;
 
 	/* - IsSerialized 						*/
 	stream >> entry.serialized_;
+	//std::cout << "serialized " << entry.serialized_ << std::endl;
 
 	/* - DependencyCnt						*/
 	stream >> dependencyCnt;
+	//std::cout << "dependencyCnt " << dependencyCnt << std::endl;
 
 	/* - Dependency_pucketID[DependencyCnt]
 	   - Dependency_pointer[DependencyCnt] 	*/
@@ -92,6 +97,7 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	for (int i = 0; i < dependencyCnt; i++){
 		stream >> bid;
 		entry.dependencies_.at(i).setBucketID(bid);
+		//std::cout << "bid dependency[] " << bid << std::endl;
 	}
 
 	std::string p;
@@ -100,22 +106,32 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 		Pointer dep_pointer;
 		Pointer::fromBinaryString(p, dep_pointer);
 		entry.dependencies_.at(i).setPointer(dep_pointer);
+		//std::cout << "pointer dependency[] " << dep_pointer.toHexString() << std::endl;
 	}
 
 	/* - UpdateCnt								*/
 	stream >> updateCnt;
+	//std::cout << "updateCnt " << updateCnt << std::endl;
 
 	/* - Updates[KVCnt]					*/
 	Pointer::fromBinaryString(pointer_start, entry.currentP_);
 	entry.updates_ = std::vector<KeyValue> (updateCnt);
 	for (int i = 0; i < updateCnt; i++){
 		KeyValue::deserialize(stream, entry.updates_[i]);
+		//std::cout << "update[] " << entry.updates_[i].toString() << std::endl;
 	}
 
 	/* - Pointer							*/
-	stream >> pointer_end;
+	// must be careful here. We must only read POINTER_SIZE characters, and not more. Otherwise, we read garbage.
+	//stream >> pointer_end;	// this turns out to be wrong as it reads garbage.
+	// first reading the extra space.
+	char cstr[Pointer::getTotalSize() + 1];
+
+	stream.get(cstr, 2);	// 2 denotes that we read only one byte.
+	stream.get(cstr, Pointer::getTotalSize() + 1);
+	pointer_end = std::string(cstr);
 	if (pointer_end.compare(pointer_start) != 0) {
-		std::cerr << "Pointers do not match" << std::endl;
+		DEBUG_CERR(CLASS_NAME, __func__, "Top pointer (" << pointer_start << ") and Down pointer (" << pointer_end << ")  do not match!! ");
 		exit(1);
 	}
 }

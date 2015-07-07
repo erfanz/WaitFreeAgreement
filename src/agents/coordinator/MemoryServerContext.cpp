@@ -13,14 +13,14 @@
 #include "../../config.hpp"
 #include "../../util/utils.hpp"	// for toString();
 
+#define CLASS_NAME	"MSCtx"
+
+
 MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLocal){
 	std::atomic<uint64_t>*	bucketHash;
 	std::atomic<uint64_t>*	bucketValid;
 	std::atomic<char>**	logJournal;
 	memoryServer.getMemoryHandlers(&bucketValid, &bucketHash, &logJournal);
-
-	//std::atomic<uint64_t>*	bucketHash2;
-	//LocalRegionContext<uint64_t>* bucketHash2_ = new LocalRegionContext<uint64_t>(bucketHash2);
 
 	this->isLocal_ = isLocal;
 	if (isLocal_) {
@@ -32,47 +32,8 @@ MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLoca
 			logJournals_[i] = new LocalRegionContext<char>(logJournal[i]);
 		}
 	}
+	DEBUG_COUT(CLASS_NAME, __func__, "Memory Server Context created");
 }
-//
-//bool MemoryServerContext::isKeyValid (const uint64_t hashedKey, const Key key) const{
-//	if (isLocal){
-//		SCN scn(memoryServer.keyValid);
-//		// TODO
-//		return true;
-//
-//	}
-//	else {
-//		// TODO
-//		return false;
-//	}
-//}
-//
-//int MemoryServerContext::getLastMissedSCN(const HashMaker hashedKey, SCN &outputScn) const{
-//	outputScn = memoryServer.keyValid[hashedKey.getHashed()];
-//	return 0;
-//}
-//
-//int MemoryServerContext::findItemByVersion(HashMaker hashedKey, Key key, SCN scn, TID tid, LogEntry &output_entry) const{
-//	Pointer p;
-//	getKeyHash(hashedKey.getHashed(), Pointer &p);
-//	Pointer p = p.makePointer(memoryServer.keyHash[hashedKey.getHashed()]);
-//
-//	LogEntry *entry = fetchLogEntry(p.coordinatorNum, p.offset, p.length);
-//	if (entry->key.isEqual(key)) {
-//		// this is the item we are looking for
-//		return entry;
-//	}
-//	return 0;
-//}
-//
-//LogEntry* MemoryServerContext::fetchLogEntry(uint8_t coordinatorNum, uint32_t offset, uint16_t length) const {
-//	LogEntry *entry = new LogEntry();
-//
-//
-//}
-//
-//int getKeyHash(HashMaker &, Pointer &p);
-
 
 ErrorType MemoryServerContext::writeLogEntry(const primitive::coordinator_num_t cID, const LogEntry &entry) {
 	std::ostringstream os;
@@ -82,6 +43,8 @@ ErrorType MemoryServerContext::writeLogEntry(const primitive::coordinator_num_t 
 	const char* cstr = tmp.c_str();
 
 	logJournals_[cID]->write(cstr, entry.getCurrentP().getOffset(), entry.getCurrentP().getLength());
+
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString() << " written on log journal[" << (int)cID << "]");
 	return error::SUCCESS;
 }
 
@@ -93,6 +56,8 @@ ErrorType MemoryServerContext::readLogEntry(const Pointer &pointer, LogEntry &en
 	std::string tempStr(readBuffer);
 	std::istringstream is(tempStr);
 	LogEntry::deserialize(is, entry);
+
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString() << " read from log journal[" << (int)cID << "]");
 	return error::SUCCESS;
 }
 
@@ -100,12 +65,11 @@ ErrorType MemoryServerContext::readBucketHash(const HashMaker &hashedKey, Pointe
 	primitive::pointer_size_t	readBuffer[1];
 	primitive::offset_t			offset = (primitive::offset_t)(hashedKey.getHashed());
 
-	std::cout << "pointer: " << readBuffer[0] << std::endl;
-
 	bucketHash_->read(readBuffer, offset, sizeof(primitive::pointer_size_t));
 
 	pointer = Pointer::makePointer(readBuffer[0]);
 
+	DEBUG_COUT(CLASS_NAME, __func__, "Bucket hash " << hashedKey.getHashed() << " read. It points to " << pointer.toHexString());
 	return error::SUCCESS;
 }
 
@@ -119,9 +83,15 @@ ErrorType MemoryServerContext::swapBucketHash(const size_t bucketID, const Point
 		// TODO: if we know for sure that (expected == expectedHead.toULL()),
 		// then instead of the following line, we can write actualCurrentHead = expectedHead;
 		actualCurrentHead = expectedHead;
+		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket hash " << bucketID
+				<< " succeeded (expected: " << expectedHead.toHexString() << ", real: " << actualCurrentHead.toHexString() << ")");
 	}
-	else
+	else {
+
 		actualCurrentHead = Pointer::makePointer(expected);
+		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket hash " << bucketID
+						<< " failed (expected: " << expectedHead.toHexString() << ", real: " << actualCurrentHead.toHexString() << ")");
+	}
 
 	return eType;
 }
@@ -135,5 +105,7 @@ ErrorType MemoryServerContext::markSerialized(const primitive::coordinator_num_t
 	const char* cstr = trueFlag.c_str();
 
 	logJournals_[cID]->write(cstr, offset, writeLength);
+
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString() << " marked serialized on log journal[" << (int)cID << "]");
 	return error::SUCCESS;
 }

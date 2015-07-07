@@ -23,6 +23,7 @@ public:
 	~Change();
 	const std::vector<Dependency>& getDependencies() const;
 	const std::vector<KeyValue>& getUpdates() const;
+	const std::string toString() const;
 };
 
 #endif /* CHANGE_HPP_ */

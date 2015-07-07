@@ -29,11 +29,12 @@ ErrorType Coordinator::connectToMemoryServers(std::vector<MemoryServerContext> m
 	this->memoryServerCtxs_ = memoryServerCtxs;
 	this->localMSCtxIndex_ = coordinatorID_;
 	DEBUG_COUT(CLASS_NAME, __func__, "Memory server contexts are all set for coordinator " << (int)coordinatorID_);
-
 	return error::SUCCESS;
 }
 
 ErrorType Coordinator::applyChange(Change &change, TID tID){
+	DEBUG_COUT(CLASS_NAME, __func__, "Applying Change: " << change.toString() << " by coordinator " << (int)coordinatorID_);
+
 	(void)tID;	// TODO: since it's unused
 
 	LogEntry *entry = NULL;
@@ -56,8 +57,8 @@ ErrorType Coordinator::createNewPointer(Change &change, Pointer **pointer) {
 
 	freeBufferOffset_ += entrySize;	// moving forward the free buffer head
 
-	DEBUG_COUT(CLASS_NAME, __func__, "Pointer created (" << (*pointer)->toHexString() << ") by coordinator " << (int)coordinatorID_);
-
+	DEBUG_COUT(CLASS_NAME, __func__, "Pointer created (" << (*pointer)->toHexString()
+			<< ") by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
 }
 
@@ -65,16 +66,18 @@ ErrorType Coordinator::makeNewLogEntry(Change &change, Pointer &entryPointer, Lo
 	bool isSerialized = false;
 
 	*entry = new LogEntry(change.getDependencies(), change.getUpdates(), entryPointer, isSerialized);
-	DEBUG_COUT(CLASS_NAME, __func__, "Log entry created with pointer = " << (*entry)->getCurrentP().toHexString() << " by coordinator " << (int)coordinatorID_);
-
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry created with pointer = "
+			<< (*entry)->getCurrentP().toHexString() << " by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
 }
 
 ErrorType Coordinator::propagateLogEntry(LogEntry &entry){
 	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
 		memoryServerCtxs_.at(i).writeLogEntry(coordinatorID_, entry);
-		DEBUG_COUT(CLASS_NAME, __func__, "Copied log entry to memory server " << i << " by coordinator " << (int)coordinatorID_);
 	}
+
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString()
+			<< " propagated to all replicas by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
 }
 
@@ -84,26 +87,32 @@ ErrorType Coordinator::publishChanges(LogEntry &entry){
 
 	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
 		for (size_t d = 0; d < dependencies.size(); d++){
-			DEBUG_COUT(CLASS_NAME, __func__, "CAS the hash bucket " << dependencies.at(d).getBucketID() << " in memory server " << i << " by coordinator " << (int)coordinatorID_);
 
-			ErrorType eType = memoryServerCtxs_.at(i).swapBucketHash(dependencies.at(d).getBucketID(), dependencies.at(d).getPointer(), entry.getCurrentP(), actualCurrentHead);
+			ErrorType eType = memoryServerCtxs_.at(i).swapBucketHash(
+					dependencies.at(d).getBucketID(),
+					dependencies.at(d).getPointer(),
+					entry.getCurrentP(), actualCurrentHead);
+
 			if (eType != error::SUCCESS) {
 				std::cerr << "CAS failed!!" << std::endl;
 				return eType;
 			}
 		}
+		DEBUG_COUT(CLASS_NAME, __func__, "CAS " << dependencies.size() << " hash bucket(s) in memory server "
+				<< i << " by coordinator " << (int)coordinatorID_);
 	}
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Published the change by coordinator " << (int)coordinatorID_);
-
 	return error::SUCCESS;
 }
 
 ErrorType Coordinator::serialize(LogEntry &entry) {
 	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
 		memoryServerCtxs_.at(i).markSerialized(coordinatorID_, entry);
-		DEBUG_COUT(CLASS_NAME, __func__, "The new log entry marked serialized on memory server " << i << " by coordinator " << (int)coordinatorID_);
 	}
+	DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString()
+			<< " serialized on all replicas by coordinator " << (int)coordinatorID_);
+
 	return error::SUCCESS;
 }
 
@@ -117,22 +126,27 @@ ErrorType Coordinator::readByKey(const Key key, const SCN scn, const TID tid, Va
 	Pointer p;
 	Value v;
 
-
 	error::Throwable::testError(memoryServerCtxs_.at(localMSCtxIndex_).readBucketHash(hashedKey, p));
-	DEBUG_COUT(CLASS_NAME, __func__, "Reading bucket hash for key " << key.getId() << " resulted pointer: " << p.toHexString() << " by coordinator " << (int)coordinatorID_);
-
+	DEBUG_COUT(CLASS_NAME, __func__, "Reading bucket hash for key " << key.getId() << " resulted pointer: "
+			<< p.toHexString() << " by coordinator " << (int)coordinatorID_);
 
 	while (true) {
 		error::Throwable::testError(memoryServerCtxs_.at(localMSCtxIndex_).readLogEntry(p, entry));
-		if (entry.getDependencyIfExists(hashedKey.getHashed(), p) == true) {
-			continue;
-		}
-		else if (entry.getUpdateIfExists(key, v) == true) {
+		if (entry.getUpdateIfExists(key, v) == true) {
 			// TODO: check if the KV pair fulfills the SCN and TID conditions
+			DEBUG_COUT(CLASS_NAME, __func__, "Key " << key.getId() << " found as an update in log entry " << p.toHexString()
+					<< " by coordinator " << (int)coordinatorID_);
 			break;
+		}
+		else if (entry.getDependencyIfExists(hashedKey.getHashed(), p) == true) {
+			DEBUG_COUT(CLASS_NAME, __func__, "Key " << key.getId() << " found as a dependency in log entry "
+					<< p.toHexString() << " by coordinator " << (int)coordinatorID_);
+			continue;
 		}
 		else {
 			// no cleanup is needed
+			DEBUG_COUT(CLASS_NAME, __func__, "Key " << key.getId() << " found neither as a dependency nor an update in log entry "
+					<< p.toHexString() << " by coordinator " << (int)coordinatorID_);
 			return error::KEY_NOT_IN_THE_LOG_ENTRY;
 		}
 	}
@@ -143,34 +157,3 @@ ErrorType Coordinator::readByKey(const Key key, const SCN scn, const TID tid, Va
 void Coordinator::errorHandler(const ErrorType eType) {
 	std::cerr << "Error Occured, type: " << eType << std::endl;
 }
-
-//int Coordinator::readByKey(const Key key, const SCN scn, const TID tid){
-//	// hash the key to find the corresponding bucket
-//	HashedKey hashedKey = key.hashKey();
-//
-//	// find the local memory server, if exists
-//	const MemoryServerContext *localMS = findLocalMemoryServer();
-//
-//	// Checks if it's not out-dated for that particular bucket
-//	const SCN missedSCN = localMS->getLastMissedSCN(hashedKey);
-//	if (! scn.isSCNCompatible(missedSCN))
-//		// TODO: Hand the request over to another coordinator
-//		return ERROR_LOCAL_REPLICA_IS_OUTDATED;
-//
-//
-//	// Searches down the key hash to find the entry with the given key and with appropriate scn
-//	LogEntry entry = localMS->findItemByVersion(hashedKey, key, scn, tid);
-//
-//	// check if the item is serialized
-//	if (entry.isSerialized())
-//		return entry.getValue();
-//	else{
-//		// TODO resolve conflict
-//		return -1;
-//	}
-//}
-
-
-//const MemoryServerContext* Coordinator::findLocalMemoryServer(){
-//	return &memoryServerContexts.at(coordinatorNum);
-//}

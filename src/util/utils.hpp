@@ -24,13 +24,16 @@
 namespace utilities {
 	#if(DEBUG_ENABLED)
 	#define DEBUG_COUT(className,funcName,message) do { \
-			std::string header = std::string("[") + className + ":" + funcName + "] "; \
-			std::cout << std::setw(30) << std::left << header << message << std::endl; \
+			std::string header = std::string("[") + className + "::" + funcName + "] "; \
+			std::cout << std::setw(35) << std::left << header << message << std::endl; \
 		} while( false )
-	#define DEBUG_CERR(x) do { std::cerr << x << std::endl; } while( false )
+	#define DEBUG_CERR(className,funcName,message) do { \
+			std::string header = std::string("[") + className + "::" + funcName + "] "; \
+			std::cerr << std::setw(35) << std::left << header << message << std::endl; \
+		} while( false )
 	#else
 	#define DEBUG_COUT(className,funcName,message) do {} while (false)
-	#define DEBUG_CERR(x) do {} while (false)
+	#define DEBUG_CERR(className,funcName,message) do {} while (false)
 	#endif
 
 
