@@ -44,8 +44,8 @@ public:
 	Coordinator(primitive::coordinator_num_t coordinatorID);
 	~Coordinator();
 	ErrorType connectToMemoryServers(std::vector<MemoryServerContext> memoryServerCtxs);
-	ErrorType applyChange(Change &change, TID tID);
-	ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue);
+	ErrorType applyChange(Change &change, TID tID, Pointer &newEntryPointer);
+	ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue, int &searchDepth);
 
 };
 

@@ -32,8 +32,13 @@ ErrorType Coordinator::connectToMemoryServers(std::vector<MemoryServerContext> m
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::applyChange(Change &change, TID tID){
+ErrorType Coordinator::applyChange(Change &change, TID tID, Pointer &newEntryPointer){
 	DEBUG_COUT(CLASS_NAME, __func__, "Applying Change: " << change.toString() << " by coordinator " << (int)coordinatorID_);
+
+	if (change.getUpdates().size() == 0) {
+		DEBUG_COUT(CLASS_NAME, __func__, "Change does not contain any update");
+		return error::NO_UPDATE_KEY_IN_CHANGE;
+	}
 
 	(void)tID;	// TODO: since it's unused
 
@@ -45,6 +50,8 @@ ErrorType Coordinator::applyChange(Change &change, TID tID){
 	error::Throwable::testError(propagateLogEntry(*entry));
 	error::Throwable::testError(publishChanges(*entry));
 	error::Throwable::testError(serialize(*entry));
+
+	newEntryPointer = *entryPointer;	// for logging purposes. Otherwise, the variable 'newEntryPointer' can be removed (also from the function signature)
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Change successfully applied by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
@@ -116,19 +123,23 @@ ErrorType Coordinator::serialize(LogEntry &entry) {
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue) {
+ErrorType Coordinator::readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue, int &searchDepth) {
 	(void)scn;	// TODO: must be removed
 	(void)tid;	// TODO: must be removed
-
 
 	HashMaker hashedKey(key.getId());
 	LogEntry entry;
 	Pointer p;
 	Value v;
 
-	error::Throwable::testError(memoryServerCtxs_.at(localMSCtxIndex_).readBucketHash(hashedKey, p));
+	ErrorType eType = memoryServerCtxs_.at(localMSCtxIndex_).readBucketHash(hashedKey, p);
 	DEBUG_COUT(CLASS_NAME, __func__, "Reading bucket hash for key " << key.getId() << " resulted pointer: "
 			<< p.toHexString() << " by coordinator " << (int)coordinatorID_);
+
+	if (eType == error::KEY_NOT_FOUND)
+		return eType;
+
+	searchDepth = 1;
 
 	while (true) {
 		error::Throwable::testError(memoryServerCtxs_.at(localMSCtxIndex_).readLogEntry(p, entry));
@@ -141,13 +152,15 @@ ErrorType Coordinator::readByKey(const Key key, const SCN scn, const TID tid, Va
 		else if (entry.getDependencyIfExists(hashedKey.getHashed(), p) == true) {
 			DEBUG_COUT(CLASS_NAME, __func__, "Key " << key.getId() << " found as a dependency in log entry "
 					<< p.toHexString() << " by coordinator " << (int)coordinatorID_);
+
+			searchDepth++;
 			continue;
 		}
 		else {
 			// no cleanup is needed
 			DEBUG_COUT(CLASS_NAME, __func__, "Key " << key.getId() << " found neither as a dependency nor an update in log entry "
 					<< p.toHexString() << " by coordinator " << (int)coordinatorID_);
-			return error::KEY_NOT_IN_THE_LOG_ENTRY;
+			return error::KEY_NOT_FOUND;
 		}
 	}
 	returnValue = v;

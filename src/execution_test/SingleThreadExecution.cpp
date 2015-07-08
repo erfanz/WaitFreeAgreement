@@ -74,8 +74,23 @@ void constructChange(Change **change __attribute__((unused)), std::vector<std::s
 	*change = new Change(updates, dependencies);
 }
 
+void updateBucketInfo(std::vector<std::string> updateKeys, std::vector<std::string> pureDependencies, Pointer &newEntryPointer) {
+	uint64_t p = newEntryPointer.toULL();
+	std::vector<std::string>::iterator it;
+	for (it = updateKeys.begin(); it != updateKeys.end(); ++it) {
+		size_t bucketID = keyToBucketMap.find((std::string)*it)->second;
+		bucketToPointerMap[bucketID] = p;
+	}
+
+	for (it = pureDependencies.begin(); it != pureDependencies.end(); ++it) {
+		size_t bucketID = keyToBucketMap.find((std::string)*it)->second;
+		bucketToPointerMap[bucketID] = p;
+	}
+}
+
 int main () {
 	Change* change;
+	Pointer newEntryPointer;
 
 	std::vector<MemoryServer*> memoryServers;
 	createMemoryServers(memoryServers);
@@ -111,17 +126,26 @@ int main () {
 	updateKeys = {"k1", "k2"};
 	pureDependencies = {};
 	constructChange(&change, updateKeys, pureDependencies);
-	coordinators.at(0)->applyChange(*change, tid);
+	coordinators.at(0)->applyChange(*change, tid, newEntryPointer);
+	updateBucketInfo(updateKeys, pureDependencies, newEntryPointer);
+
+	std::cout << std::endl;
 
 	updateKeys = {"k5", "k2"};
 	pureDependencies = {"k1"};
 	constructChange(&change, updateKeys, pureDependencies);
-	coordinators.at(1)->applyChange(*change, tid);
+	coordinators.at(1)->applyChange(*change, tid, newEntryPointer);
+	updateBucketInfo(updateKeys, pureDependencies, newEntryPointer);
 
-//	updateKeys = {"k1", "k2"};
-//	pureDependencies = {};
-//	constructChange(&change, updateKeys, pureDependencies);
-//	coordinators.at(1)->applyChange(*change, tid);
+	std::cout << std::endl;
+
+	updateKeys = {"k9", "k8", "k7", "k6"};
+	pureDependencies = {"k2", "k3", "k4", "k5"};
+	constructChange(&change, updateKeys, pureDependencies);
+	coordinators.at(1)->applyChange(*change, tid, newEntryPointer);
+	updateBucketInfo(updateKeys, pureDependencies, newEntryPointer);
+
+	std::cout << std::endl;
 
 
 	// let's see if the change is visible

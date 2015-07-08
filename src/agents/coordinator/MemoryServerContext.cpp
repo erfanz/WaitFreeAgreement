@@ -70,7 +70,11 @@ ErrorType MemoryServerContext::readBucketHash(const HashMaker &hashedKey, Pointe
 	pointer = Pointer::makePointer(readBuffer[0]);
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Bucket hash " << hashedKey.getHashed() << " read. It points to " << pointer.toHexString());
-	return error::SUCCESS;
+
+	if (pointer.isNull())
+		return error::KEY_NOT_FOUND;
+	else
+		return error::SUCCESS;
 }
 
 ErrorType MemoryServerContext::swapBucketHash(const size_t bucketID, const Pointer &expectedHead, const Pointer &newHead, Pointer &actualCurrentHead) {

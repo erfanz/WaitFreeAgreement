@@ -43,7 +43,5 @@ const std::string Change::toString() const {
 		str += ", ";
 	}
 	str += "\"";
-	std::cout << "there" << std::endl;
-
 	return str;
 }

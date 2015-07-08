@@ -119,6 +119,15 @@ size_t Pointer::getTotalSize(){
 	return 64;	// TODO: since we're writing each pointer as a 64-character boolean sequence
 }
 
+const bool Pointer::isNull() const {
+	if (coordinatorNum_ == 0
+			&& generationNum_ == 0
+			&& length_ == 0
+			&& offset_ == 0)
+		return true;
+	else return false;
+}
+
 void Pointer::setCoordinatorNum(const primitive::coordinator_num_t coordinatorNum) {
 	this->coordinatorNum_ = coordinatorNum;
 }

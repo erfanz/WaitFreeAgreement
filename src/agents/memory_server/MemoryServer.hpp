@@ -21,6 +21,7 @@ private:
 public:
 	MemoryServer();
 	void getMemoryHandlers(std::atomic<uint64_t>** bucketValid, std::atomic<uint64_t>** bucketHash, std::atomic<char>*** logJournal);
+	void resetMemoryBuffers();
 
 
 	~MemoryServer();

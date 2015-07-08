@@ -36,11 +36,14 @@ public:
 	const primitive::entry_size_t getLength() const;
 	const primitive::offset_t getOffset() const;
 	static size_t getTotalSize();
+	const bool isNull() const;
+
 
 	void setCoordinatorNum(const primitive::coordinator_num_t coordinatorNum);
 	void setGenerationNum(const primitive::generation_num_t generationNum);
 	void setLength(const primitive::entry_size_t length);
 	void setOffset(const primitive::offset_t offset);
+
 
 	primitive::pointer_size_t toULL() const;
 	std::string toString() const;

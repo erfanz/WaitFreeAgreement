@@ -16,7 +16,7 @@
 
 
 namespace config {
-	#define DEBUG_ENABLED (true)
+	#define DEBUG_ENABLED (false)
 
 
 	static const int	MEMORY_SERVER_CNT	= 3;
