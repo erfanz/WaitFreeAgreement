@@ -21,14 +21,10 @@ private:
 
 public:
 	LocalRegionContext(std::atomic<T>* buffer);
-
 	ErrorType read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length);
 	ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length);
-
 	ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset);
-
-	ErrorType multicast();
-
+	ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets);
 	~LocalRegionContext();
 };
 
@@ -66,7 +62,7 @@ ErrorType LocalRegionContext<T>::CAS(T* expectedValue, const T &desiredValue, co
 }
 
 template <typename T>
-ErrorType LocalRegionContext<T>::multicast() {
+ErrorType LocalRegionContext<T>::multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) {
 	return error::SUCCESS;
 }
 

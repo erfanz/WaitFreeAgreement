@@ -12,6 +12,7 @@
 #include "../../base_types/LogEntry.hpp"	// for makeLogEntry()
 #include "../../errors/Error.hpp"
 #include "../../base_types/PrimitiveTypes.hpp"
+#include <future>         // std::promise, std::future
 
 #include <assert.h>
 #include <string>
@@ -94,27 +95,71 @@ void LocalRegionContextTest::test_CAS() {
 
 	// Apply successful CAS on all elements (// incrementing all elements by one)
 	for (primitive::offset_t i = 0; i < 10; i++) {
+//		std::promise<ErrorType> errorProm;
+//		std::future<ErrorType> errorFuture;
+//		std::promise<uint64_t>  actualHeadProm;
+//		std::future<uint64_t> actualHeadFuture;
+//
+//		errorFuture = errorProm.get_future();
+//		actualHeadFuture = actualHeadProm.get_future();
+
 		uint64_t expected = initialV.at(i);
 		uint64_t desired = initialV.at(i) + 1;
+
+		// region.CAS(&expected, desired, i, errorProm, actualHeadProm);
 		ErrorType e = region.CAS(&expected, desired, i);
+
+//		ErrorType e			= errorFuture.get();
+//		uint64_t actualHead	= actualHeadFuture.get();
+		uint64_t actualHead	= expected;
+
 		assert(e == error::SUCCESS);
-		assert(expected == initialV.at(i));
+		assert(actualHead == initialV.at(i));
 	}
 
 	// Now apply unsuccessful CAS on all elements
 	for (primitive::offset_t i = 0; i < 10; i++) {
+//		std::promise<ErrorType> errorProm;
+//		std::future<ErrorType> errorFuture;
+//		std::promise<uint64_t>  actualHeadProm;
+//		std::future<uint64_t> actualHeadFuture;
+//
+//		errorFuture = errorProm.get_future();
+//		actualHeadFuture = actualHeadProm.get_future();
+
 		uint64_t expected = initialV.at(i);
 		uint64_t desired = initialV.at(i) - 1;
+
+		// region.CAS(&expected, desired, i, errorProm, actualHeadProm);
 		ErrorType e = region.CAS(&expected, desired, i);
+
+//		ErrorType e			= errorFuture.get();
+//		uint64_t actualHead	= actualHeadFuture.get();
+		uint64_t actualHead = expected;
+
 		assert(e == error::CAS_FAILED);
-		assert(expected == initialV.at(i) + 1);
+		assert(actualHead == initialV.at(i) + 1);
 	}
 
 	// Now apply successful CAS on all elements (decrement all elements by one)
 	for (primitive::offset_t i = 0; i < 10; i++) {
+//		std::promise<ErrorType> errorProm;
+//		std::future<ErrorType> errorFuture;
+//		std::promise<uint64_t>  actualHeadProm;
+//		std::future<uint64_t> actualHeadFuture;
+
+//		errorFuture = errorProm.get_future();
+//		actualHeadFuture = actualHeadProm.get_future();
+
 		uint64_t expected = initialV.at(i) + 1;
 		uint64_t desired = initialV.at(i);
+
+		// region.CAS(&expected, desired, i, errorProm, actualHeadProm);
 		ErrorType e = region.CAS(&expected, desired, i);
+
+//		ErrorType e			= errorFuture.get();
+//		uint64_t actualHead	= actualHeadFuture.get();
+
 		assert(e == error::SUCCESS);
 		assert(buffer[i] == initialV.at(i));
 	}

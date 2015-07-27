@@ -13,6 +13,8 @@
 #include "../errors/Error.hpp"
 #include "../base_types/PrimitiveTypes.hpp"
 #include <cstddef>	// for std::size_t
+#include <vector>
+#include <future>         // std::promise, std::future
 
 typedef error::ErrorType ErrorType;
 
@@ -22,10 +24,8 @@ class AbstractRegionContext {
 public:
 	virtual ErrorType read(T* destinationBuffer, primitive::offset_t sourceBufferOffset, std::size_t length) = 0;
 	virtual ErrorType write(const T* sourceBuffer, primitive::offset_t destinationBufferOffset, std::size_t length) = 0;
-
-//	virtual ErrorType CAS(uintptr_t sourceBuffer, std::size_t length, T expectedValue, T swapValue, uintptr_t destinationBuffer) = 0;
-
-	virtual ErrorType multicast() = 0;
+	virtual ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset) = 0;
+	virtual ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) = 0;
 
 	virtual ~AbstractRegionContext() = 0;
 };

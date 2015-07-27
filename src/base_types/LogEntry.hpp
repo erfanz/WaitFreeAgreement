@@ -31,8 +31,10 @@ private:
 
 public:
 	LogEntry();
-
 	LogEntry(std::vector<Dependency>, std::vector<KeyValue> updates, Pointer currentP, bool serialized);
+
+	bool operator< (const LogEntry &right) const;		// needed for set operation
+
 
 	const std::vector<Dependency>& getDependencies() const;
 	const std::vector<KeyValue>& getUpdates() const;
@@ -46,10 +48,12 @@ public:
 	static primitive::entry_size_t calculateEntrySize(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates);
 	bool isSerialized() const;
 	bool isEqual(const LogEntry &entry) const;
+	int compare(const LogEntry &entry) const;
 	virtual void serialize(std::ostream& stream) const;
 	static void doDeserialize(std::istream&, LogEntry &);
 	bool getUpdateIfExists(const Key &key, Value &value) const;
 	bool getDependencyIfExists(const size_t bucketID, Pointer &pointer) const;
+
 
 };
 

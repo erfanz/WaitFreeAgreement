@@ -15,6 +15,8 @@
 #include "../memory_server/MemoryServer.hpp"
 #include "../../base_types/HashMaker.hpp"
 #include "../../errors/Error.hpp"
+#include <future>         // std::promise, std::future
+
 
 typedef error::ErrorType ErrorType;
 
@@ -28,12 +30,16 @@ private:
 
 
 public:
+	friend class CoordinatorTest;	// since we want to test even private member methods of Coordinator in our unit tests
 	MemoryServerContext(MemoryServer &memServer, bool isLocal);
-	ErrorType writeLogEntry(const primitive::coordinator_num_t cID, const LogEntry &entry);
-	ErrorType readLogEntry(const Pointer &pointer, LogEntry &entry);
-	ErrorType readBucketHash(const HashMaker &, Pointer &);
-	ErrorType swapBucketHash(const size_t bucketID, const Pointer &expectedHead, const Pointer &newHead, Pointer &actualCurrentHead);
-	ErrorType markSerialized(const primitive::coordinator_num_t cID, const LogEntry &entry);
+
+	void writeLogEntry(const primitive::coordinator_num_t cID, const LogEntry &entry, std::promise<ErrorType> &errorProm);
+	void readLogEntry(const Pointer &pointer, std::promise<ErrorType> &errorProm, LogEntry &entry) const;
+	void readBucketHash(const size_t bucketID, std::promise<ErrorType> &errorProm, Pointer &pointer) const;
+	void swapBucketHash(const size_t bucketID, const Pointer &expectedHead, const Pointer &newHead, std::promise<ErrorType> &errorProm, Pointer &actualHead);
+	//ErrorType swapMultipleBucketHash(const std::vector<Dependency> &dependencies, const Pointer &newHead, std::vector<Pointer> &actualCurrentHeads);
+	void markSerialized(const LogEntry &entry, std::promise<ErrorType> &errorProm);
+	void checkSerialized(const LogEntry &entry, std::promise<ErrorType> &errorProm, bool &isSerialized);
 };
 
 #endif /* AGENTS_COORDINATOR_MEMORYSERVERCONTEXT_HPP_ */

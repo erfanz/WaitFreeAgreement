@@ -26,6 +26,11 @@ LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> u
 	this->serialized_ = serialized;
 }
 
+bool LogEntry::operator< (const LogEntry &right) const {
+	return currentP_ < right.getCurrentP();
+}
+
+
 void LogEntry::serialize(std::ostream& stream) const{
 	/*
 	 * - (a) Pointer to the current log entry
@@ -191,6 +196,18 @@ bool LogEntry::isEqual(const LogEntry &entry) const {
 			return false;
 	}
 	return true;
+}
+
+/**
+ * Compares the current log entry with the input.
+ * returns:
+ *  1: if the current entry is ordered greater than the input
+ *  0: if the current entry and the input are ordered equally
+ *  -1: if the current entry is ordered smaller than the input
+ */
+int LogEntry::compare(const LogEntry &entry) const {
+	// TODO: this should be changed
+	return currentP_.compare(entry.getCurrentP());
 }
 
 bool LogEntry::getUpdateIfExists(const Key &key, Value &value) const {

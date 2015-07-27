@@ -4,7 +4,7 @@ LD = g++
 CPPFLAGS = -std=gnu++14 -g -Wall -Wconversion -Wextra -Wno-ignored-qualifiers -DGTEST_OS_CYGWIN=1
 BUILDDIR = build/widgets
 
-TEST_MODULES	:= unit_tests unit_tests/base_types_test unit_tests/region_test unit_tests/execution_test
+TEST_MODULES	:= unit_tests unit_tests/base_types_test unit_tests/region_test unit_tests/execution_test unit_tests/agents_test
 AGENTS_MODULES	:= agents/coordinator agents/garbage_collector agents/memory_server 
 MODULES   := base_types agents util errors region $(AGENTS_MODULES) $(TEST_MODULES)	# uncomment this line for unit testing
 #MODULES   := base_types agents util errors region $(AGENTS_MODULES) execution_test		# uncomment this line for execution testing

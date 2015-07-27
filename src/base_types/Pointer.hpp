@@ -28,6 +28,8 @@ private:
 public:
 	Pointer();
 	Pointer(primitive::coordinator_num_t coordinatorNum, primitive::generation_num_t generationNum, primitive::entry_size_t length, primitive::offset_t offset);
+	bool operator< (const Pointer &right) const;		// needed for set operation
+
 	virtual void serialize(std::ostream& stream) const;	// inherited from Serializable
 	static Pointer makePointer(const primitive::pointer_size_t);
 
@@ -49,6 +51,7 @@ public:
 	std::string toString() const;
 	std::string toHexString() const;
 	bool isEqual(const Pointer &pointer) const;
+	int compare(const Pointer &pointer) const;
 	static void fromBinaryString(std::string serialized, Pointer &pointer);
 	static void doDeserialize(std::istream& stream, Pointer &p);
 };
