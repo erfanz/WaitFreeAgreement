@@ -12,7 +12,7 @@
 #include "base_types_test/KeyValueTest.hpp"
 #include "base_types_test/DependencyTest.hpp"
 #include "region_test/LocalRegionContextTest.hpp"
-//#include "execution_test/SingleTreadedExecutionTest.hpp"
+#include "execution_test/SingleTreadedExecutionTest.hpp"
 #include "agents_test/CoordinatorTest.hpp"
 
 
@@ -31,7 +31,7 @@ int main() {
 	appendVector(allTestFunctions, DependencyTest::getFunctionList());
 	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
 	appendVector(allTestFunctions, LocalRegionContextTest::getFunctionList());
-	//appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
+	// appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
 	appendVector(allTestFunctions, CoordinatorTest::getFunctionList());
 
 	for (std::size_t i = 0; i < allTestFunctions.size(); i++){

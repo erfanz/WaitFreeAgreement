@@ -28,6 +28,20 @@ bool Pointer::operator< (const Pointer &right) const {
   return toULL() < right.toULL();
 }
 
+bool Pointer::operator> (const Pointer &right) const {
+  return toULL() > right.toULL();
+}
+
+bool Pointer::isEqual(const Pointer &pointer) const {
+	if (this->coordinatorNum_ == pointer.coordinatorNum_
+			&& this->generationNum_ == pointer.generationNum_
+			&& this->length_ == pointer.length_
+			&& this->offset_ == pointer.offset_)
+		return true;
+	else return false;
+}
+
+
 void Pointer::serialize(std::ostream& stream) const{
 	primitive::pointer_size_t concat = toULL();
 
@@ -146,29 +160,4 @@ void Pointer::setLength(const primitive::entry_size_t length) {
 
 void Pointer::setOffset(const primitive::offset_t offset) {
 	this->offset_ = offset;
-}
-
-
-bool Pointer::isEqual(const Pointer &pointer) const {
-	if (this->coordinatorNum_ == pointer.coordinatorNum_
-			&& this->generationNum_ == pointer.generationNum_
-			&& this->length_ == pointer.length_
-			&& this->offset_ == pointer.offset_)
-		return true;
-	else return false;
-}
-
-/**
- * Compares the current pointer with the input pointer.
- * returns:
- *  1: if the current pointer is ordered larger the input
- *  0: if the current pointer and the input pointer are ordered equally
- *  -1: if the current pointer is ordered smaller the input
- */
-int Pointer::compare(const Pointer &pointer) const {
-	primitive::pointer_size_t first = this->toULL();
-	primitive::pointer_size_t second = pointer.toULL();
-	return (first == second)	? 0
-			: (first > second)	? 1
-			: -1;
 }

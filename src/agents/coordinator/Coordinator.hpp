@@ -33,11 +33,15 @@ private:
 	std::vector<MemoryServerContext>	memoryServerCtxs_;
 	size_t								localMSCtxIndex_;
 
+	template <typename container> ErrorType readBucketHeadsFromAllReplicas(const container &readBuckets, std::vector<std::vector<Pointer> > &pointers);
+	ErrorType blockingReadEntry(const Pointer &pointer, LogEntry &entry);
+	bool checkIfBlocks (LogEntry blockingEntry, LogEntry blockedEntry);
+
 	ErrorType propagateLogEntry(LogEntry &entry);
 	ErrorType createNewPointer(Change &change, Pointer **pointer);
 	ErrorType makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry **entry) const;
 	ErrorType publishChanges(LogEntry &entry);
-	ErrorType makeSerialized(LogEntry &entry);
+	ErrorType makeSerialized(const LogEntry &entry, const LogEntry::Status serializedFlag);
 	void errorHandler(const ErrorType eType);
 
 public:

@@ -126,7 +126,7 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	agents_handler::coordinators.at(0)->propagateLogEntry(*entry);
 	agents_handler::coordinators.at(0)->publishChanges(*entry);
 	// instead of 	agents_handler::coordinators.at(0)->makeSerialized(*entry), we have:
-	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).markSerialized(*entry, errorProm);
+	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).markSerialized(*entry, LogEntry::Status::SERIALIZED_SUCCESSFUL, errorProm);
 	eType = errorFut.get();
 	assert(eType == error::SUCCESS);
 

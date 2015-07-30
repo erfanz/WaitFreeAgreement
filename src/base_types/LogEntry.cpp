@@ -19,15 +19,46 @@
 LogEntry::LogEntry() {
 	;
 }
-LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> updates, Pointer currentP, bool serialized){
+//LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> updates, Pointer currentP, bool serialized){
+//	this->dependencies_ = dependencies;
+//	this->updates_ = updates;
+//	this->currentP_ = currentP;
+//	this->serialized_ = serialized;
+//}
+
+LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> updates, Pointer currentP, LogEntry::Status serializedStatus) {
 	this->dependencies_ = dependencies;
 	this->updates_ = updates;
 	this->currentP_ = currentP;
-	this->serialized_ = serialized;
+	this->serializedStatus_ = serializedStatus;
 }
 
 bool LogEntry::operator< (const LogEntry &right) const {
 	return currentP_ < right.getCurrentP();
+}
+
+bool LogEntry::operator>(const LogEntry &right) const {
+	// TODO: this should be changed
+	return currentP_ > right.getCurrentP();
+}
+
+bool LogEntry::isEqual(const LogEntry &entry) const {
+	if (! currentP_.isEqual(entry.getCurrentP())
+			|| serializedStatus_ != entry.getSerializedStatus()
+			|| updates_.size() != entry.getUpdates().size()
+			|| dependencies_.size() != entry.getDependencies().size())
+		return false;
+
+	for (size_t i = 0; i < dependencies_.size(); i++) {
+		if (! dependencies_.at(i).isEqual(entry.getDependencies().at(i)))
+			return false;
+	}
+
+	for (size_t i = 0; i < updates_.size(); i++) {
+		if (! updates_.at(i).isEqual(entry.getUpdates().at(i)))
+			return false;
+	}
+	return true;
 }
 
 
@@ -44,7 +75,7 @@ void LogEntry::serialize(std::ostream& stream) const{
 	 */
 
 	std::string str = currentP_.toString() + " ";
-	str += utilities::ToString<bool>(isSerialized()) + " ";
+	str += utilities::ToString<int>(getSerializedStatus()) + " ";
 	str += utilities::ToString<size_t>(dependencies_.size()) + " ";
 
 	for (size_t i=0; i < dependencies_.size(); i++)
@@ -75,8 +106,8 @@ void LogEntry::setCurrentP(const Pointer& currentP) {
 	this->currentP_ = currentP;
 }
 
-void LogEntry::setSerialized(bool serialized) {
-	this->serialized_ = serialized;
+void LogEntry::setSerialized(LogEntry::Status serializedStatus) {
+	this->serializedStatus_ = serializedStatus;
 }
 
 void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
@@ -88,7 +119,9 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	//std::cout << "pointer_start " << pointer_start << std::endl;
 
 	/* - IsSerialized 						*/
-	stream >> entry.serialized_;
+	unsigned int status;
+	stream >> status;
+	entry.serializedStatus_ = static_cast<LogEntry::Status>(status);
 	//std::cout << "serialized " << entry.serialized_ << std::endl;
 
 	/* - DependencyCnt						*/
@@ -129,10 +162,11 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	/* - Pointer							*/
 	// must be careful here. We must only read POINTER_SIZE characters, and not more. Otherwise, we read garbage.
 	//stream >> pointer_end;	// this turns out to be wrong as it reads garbage.
-	// first reading the extra space.
 	char cstr[Pointer::getTotalSize() + 1];
 
+	// first reading the extra space.
 	stream.get(cstr, 2);	// 2 denotes that we read only one byte.
+
 	stream.get(cstr, Pointer::getTotalSize() + 1);
 	pointer_end = std::string(cstr);
 	if (pointer_end.compare(pointer_start) != 0) {
@@ -157,7 +191,7 @@ primitive::entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependenc
 	size_t size = 0;
 	size +=  Pointer::getTotalSize() + 1;								// for (a) Pointer to the current log entry, and the space after
 
-	size += 1 + 1;														// for (b) IsSerialized, and the space after
+	size += 1 + 1;														// for (b) serializedStatus, and the space after
 	size += utilities::numDigits(int (dependencies.size())) + 1;		// for (c) dependencyCnt, and the space after
 
 	for (size_t i = 0; i < dependencies.size(); i++) {
@@ -175,39 +209,8 @@ primitive::entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependenc
 	return entrySize;
 }
 
-bool LogEntry::isSerialized() const {
-	return serialized_;
-}
-
-bool LogEntry::isEqual(const LogEntry &entry) const {
-	if (! currentP_.isEqual(entry.getCurrentP())
-			|| serialized_ != entry.isSerialized()
-			|| updates_.size() != entry.getUpdates().size()
-			|| dependencies_.size() != entry.getDependencies().size())
-		return false;
-
-	for (size_t i = 0; i < dependencies_.size(); i++) {
-		if (! dependencies_.at(i).isEqual(entry.getDependencies().at(i)))
-			return false;
-	}
-
-	for (size_t i = 0; i < updates_.size(); i++) {
-		if (! updates_.at(i).isEqual(entry.getUpdates().at(i)))
-			return false;
-	}
-	return true;
-}
-
-/**
- * Compares the current log entry with the input.
- * returns:
- *  1: if the current entry is ordered greater than the input
- *  0: if the current entry and the input are ordered equally
- *  -1: if the current entry is ordered smaller than the input
- */
-int LogEntry::compare(const LogEntry &entry) const {
-	// TODO: this should be changed
-	return currentP_.compare(entry.getCurrentP());
+LogEntry::Status LogEntry::getSerializedStatus() const {
+	return serializedStatus_;
 }
 
 bool LogEntry::getUpdateIfExists(const Key &key, Value &value) const {

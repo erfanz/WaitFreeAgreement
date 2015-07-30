@@ -63,7 +63,7 @@ LogEntry* LogEntryTest::makeLogEntry() {
 
 	Pointer pointer(cID, gNum, entrySize, offset);
 
-	return new LogEntry(dependencies, kvList, pointer, false);
+	return new LogEntry(dependencies, kvList, pointer, LogEntry::Status::UNKNOWN);
 }
 
 std::vector<std::function<void()>>& LogEntryTest::getFunctionList() {
@@ -103,10 +103,10 @@ void LogEntryTest::test_constructor() {
 
 	Pointer pc = Pointer::makePointer(0x1000000000000001);
 
-	LogEntry entry(dependencies, updates, pc, false);
+	LogEntry entry(dependencies, updates, pc, LogEntry::Status::UNKNOWN);
 
 	assert(entry.getCurrentP().isEqual(pc) == true);
-	assert(entry.isSerialized() == false);
+	assert(entry.getSerializedStatus() == LogEntry::Status::UNKNOWN);
 
 	std::vector<Dependency> depList = entry.getDependencies();
 	assert(depList.size() == dependencies.size());
@@ -150,7 +150,7 @@ void LogEntryTest::test_serialize() {
 	kvList.push_back(kv2);
 
 
-	LogEntry entry(dependencies, kvList, Pointer::makePointer(0x1000000000000001), false);
+	LogEntry entry(dependencies, kvList, Pointer::makePointer(0x1000000000000001), LogEntry::Status::UNKNOWN);
 
 	std::string expected = entry.getCurrentP().toString() + " "
 			+ "0" + " "		// isSerialized
