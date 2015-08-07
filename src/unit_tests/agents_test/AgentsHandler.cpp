@@ -28,7 +28,7 @@ void agents_handler::createCoordinators(std::vector<Coordinator*> &coordinators)
 		coordinators.push_back(new Coordinator (i));
 }
 
-void agents_handler::connectCoordsToMSs(std::vector<Coordinator*> &coordinators, std::vector<MemoryServer*> &memoryServers) {
+void agents_handler::connectCoordsToMSs(std::vector<Coordinator*> &coordinators, const std::vector<MemoryServer*> &memoryServers) {
 	for (primitive::coordinator_num_t c = 0; c < config::COORDINATOR_CNT; c++) {
 		std::vector<MemoryServerContext> memoryServerCtxs;
 		for (size_t m = 0; m < config::MEMORY_SERVER_CNT; m++) {
@@ -67,10 +67,10 @@ void agents_handler::resetMemoryServers() {
 		bucketToPointerMap[i] = 0ULL;
 }
 
-void agents_handler::constructChange(Change **change __attribute__((unused)), std::vector<std::string> updateKeys, std::vector<std::string> pureDependencies) {
+void agents_handler::constructChange(Change **change __attribute__((unused)), const std::vector<std::string> updateKeys, const std::vector<std::string> pureDependencies) {
 	std::vector<KeyValue> updates;
 	std::vector<Dependency> dependencies;
-	std::vector<std::string>::iterator it;
+	std::vector<std::string>::const_iterator it;
 	std::vector<size_t> buckets;
 
 	for (it = updateKeys.begin(); it != updateKeys.end(); ++it){
@@ -108,9 +108,9 @@ void agents_handler::constructChange(Change **change __attribute__((unused)), st
 	*change = new Change(updates, dependencies);
 }
 
-void agents_handler::updateBucketInfo(std::vector<std::string> updateKeys, std::vector<std::string> pureDependencies, Pointer &newEntryPointer) {
+void agents_handler::updateBucketInfo(const std::vector<std::string> &updateKeys, const std::vector<std::string> &pureDependencies, const Pointer &newEntryPointer) {
 	uint64_t p = newEntryPointer.toULL();
-	std::vector<std::string>::iterator it;
+	std::vector<std::string>::const_iterator it;
 	for (it = updateKeys.begin(); it != updateKeys.end(); ++it) {
 		size_t bucketID = keyToBucketMap.find((std::string)*it)->second;
 		bucketToPointerMap[bucketID] = p;

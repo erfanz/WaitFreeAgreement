@@ -49,7 +49,7 @@ void CoordinatorTest::test_check_serialized_when_all_serialized() {
 	agents_handler::resetMemoryServers();
 
 	LogEntry headEntry;
-	Pointer entryPointer;
+	LogEntry *newEntry1, *newEntry2;
 	Value returnValue;
 	ErrorType eType;
 
@@ -62,16 +62,16 @@ void CoordinatorTest::test_check_serialized_when_all_serialized() {
 	updateKeys = {"k1"};
 	pureDependencies = {};
 	agents_handler::constructChange(&change, updateKeys, pureDependencies);
-	eType = agents_handler::coordinators.at(0)->applyChange(*change, tid, entryPointer);
-	agents_handler::updateBucketInfo(updateKeys, pureDependencies, entryPointer);
+	eType = agents_handler::coordinators.at(0)->applyChange(*change, tid, &newEntry1);
+	agents_handler::updateBucketInfo(updateKeys, pureDependencies, newEntry1->getCurrentP());
 	assert(eType == error::SUCCESS);
 
 	// Then insert k2, which depends on k1
 	updateKeys = {"k2"};
 	pureDependencies = {"k1"};
 	agents_handler::constructChange(&change, updateKeys, pureDependencies);
-	eType = agents_handler::coordinators.at(0)->applyChange(*change, tid, entryPointer);
-	agents_handler::updateBucketInfo(updateKeys, pureDependencies, entryPointer);
+	eType = agents_handler::coordinators.at(0)->applyChange(*change, tid, &newEntry2);
+	agents_handler::updateBucketInfo(updateKeys, pureDependencies, newEntry2->getCurrentP());
 	assert(eType == error::SUCCESS);
 
 
@@ -86,6 +86,9 @@ void CoordinatorTest::test_check_serialized_when_all_serialized() {
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k2.getId())->second) == 0);
 	//assert(entryPointer.isEqual(headEntry.getCurrentP()));
+
+	delete newEntry1;
+	delete newEntry2;
 }
 
 void CoordinatorTest::test_check_serialized_when_some_serialized() {
@@ -95,7 +98,7 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	std::promise<ErrorType> errorProm;
 	std::future<ErrorType> errorFut = errorProm.get_future();
 
-	LogEntry *entry = NULL;
+	LogEntry *newEntry1, *newEntry2;
 	LogEntry headEntry;
 	Pointer *entryPointer = new Pointer();
 	Value returnValue;
@@ -110,8 +113,8 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	updateKeys = {"k1"};
 	pureDependencies = {};
 	agents_handler::constructChange(&change, updateKeys, pureDependencies);
-	eType = agents_handler::coordinators.at(0)->applyChange(*change, tid, *entryPointer);
-	agents_handler::updateBucketInfo(updateKeys, pureDependencies, *entryPointer);
+	eType = agents_handler::coordinators.at(0)->applyChange(*change, tid, &newEntry1);
+	agents_handler::updateBucketInfo(updateKeys, pureDependencies, newEntry1->getCurrentP());
 	assert(eType == error::SUCCESS);
 
 	// then insert k2, which depends on k1.
@@ -121,11 +124,11 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	agents_handler::constructChange(&change, updateKeys, pureDependencies);
 
 	agents_handler::coordinators.at(0)->createNewPointer(*change, &entryPointer);
-	agents_handler::coordinators.at(0)->makeNewLogEntry(*change, *entryPointer, &entry);
-	agents_handler::coordinators.at(0)->propagateLogEntry(*entry);
-	agents_handler::coordinators.at(0)->publishChanges(*entry);
-	// instead of 	agents_handler::coordinators.at(0)->makeSerialized(*entry), we have:
-	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).markSerialized(*entry, LogEntry::Status::SERIALIZED_SUCCESSFUL, errorProm);
+	agents_handler::coordinators.at(0)->makeNewLogEntry(*change, *entryPointer, &newEntry2);
+	agents_handler::coordinators.at(0)->propagateLogEntry(*newEntry2);
+	agents_handler::coordinators.at(0)->publishChanges(*newEntry2);
+	// instead of agents_handler::coordinators.at(0)->makeSerialized(*entry), we have:
+	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).markSerialized(*newEntry2, LogEntry::Status::SERIALIZED_SUCCESSFUL, errorProm);
 	eType = errorFut.get();
 	assert(eType == error::SUCCESS);
 
@@ -142,6 +145,9 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k2.getId())->second) == 0);
 	assert(entryPointer->isEqual(headEntry.getCurrentP()));
+
+	delete newEntry1;
+	delete newEntry2;
 }
 
 void CoordinatorTest::test_check_serialized_when_none_serialized() {

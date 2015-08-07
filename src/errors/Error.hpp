@@ -28,7 +28,9 @@ namespace error{
 		NOT_MARKED_SERIALIZED,
 		CHANGE_FAILURE,
 		UNSERIALIZABLE,
-		RESOLVE_FAILED
+		RESOLVE_FAILED,
+		SET_WITH_NO_GET,
+		GET_POINTER_CHANGED
 	};
 
 	class Throwable;
@@ -36,8 +38,8 @@ namespace error{
 
 class error::Throwable {
 public:
-	virtual void errorHandler(const ErrorType eType) = 0;
-	void testError(const ErrorType eType);
+	// virtual void errorHandler(const ErrorType eType);
+	// void testError(const ErrorType eType);
 
     virtual ~Throwable(){}
 };

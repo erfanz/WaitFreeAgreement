@@ -9,7 +9,7 @@
 
 #include "Error.hpp"
 
-void error::Throwable::testError(const ErrorType eType) {
-	if (eType != SUCCESS)
-		errorHandler(eType);
-}
+//void error::Throwable::testError(const ErrorType eType) {
+//	if (eType != SUCCESS)
+//		errorHandler(eType);
+//}

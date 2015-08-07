@@ -9,7 +9,6 @@
 
 #include "Coordinator.hpp"
 #include "../../base_types/HashMaker.hpp"
-#include "../../graph/Graph.hpp"
 #include <future>         // std::promise, std::future
 
 
@@ -34,7 +33,7 @@ ErrorType Coordinator::connectToMemoryServers(std::vector<MemoryServerContext> m
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::applyChange(Change &change, TID tID, Pointer &newEntryPointer){
+ErrorType Coordinator::applyChange(Change &change, TID tID, LogEntry **newEntry){
 	DEBUG_COUT(CLASS_NAME, __func__, "Applying Change: " << change.toString() << " by coordinator " << (int)coordinatorID_);
 
 	ErrorType eType;
@@ -46,25 +45,23 @@ ErrorType Coordinator::applyChange(Change &change, TID tID, Pointer &newEntryPoi
 
 	(void)tID;	// TODO: since it's unused
 
-	LogEntry *entry = NULL;
 	Pointer *entryPointer = NULL;
 
 	if ((eType = createNewPointer(change, &entryPointer)) != error::SUCCESS)
 		return eType;
 
-	if ((eType = makeNewLogEntry(change, *entryPointer, &entry)) != error::SUCCESS)
+	if ((eType = makeNewLogEntry(change, *entryPointer, newEntry ) ) != error::SUCCESS)
 		return eType;
 
-	if ((eType = propagateLogEntry(*entry)) != error::SUCCESS)
+	if ((eType = propagateLogEntry(**newEntry)) != error::SUCCESS)
 		return eType;
 
-	if ((eType = publishChanges(*entry)) != error::SUCCESS)
+	if ((eType = publishChanges(**newEntry)) != error::SUCCESS)
 		// TODO: we should call resolve
 		return error::CHANGE_FAILURE;
 	else {
 		// All the CASes succeeded
-		replicateSerializationStatus(*entry, LogEntry::Status::SERIALIZED_SUCCESSFUL);
-		newEntryPointer = *entryPointer;	// for logging purposes. Otherwise, the variable 'newEntryPointer' can be removed (also from the function signature)
+		replicateSerializationStatus(**newEntry, LogEntry::Status::SERIALIZED_SUCCESSFUL);
 		DEBUG_COUT(CLASS_NAME, __func__, "Change successfully applied by coordinator " << (int)coordinatorID_);
 		return error::SUCCESS;
 	}

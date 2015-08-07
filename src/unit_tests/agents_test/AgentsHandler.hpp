@@ -28,11 +28,12 @@ namespace agents_handler {
 
 	void createMemoryServers(std::vector<MemoryServer*> &memoryServers);
 	void createCoordinators(std::vector<Coordinator*> &coordinators);
-	void connectCoordsToMSs(std::vector<Coordinator*> &coordinators, std::vector<MemoryServer*> &memoryServers) ;
+	void connectCoordsToMSs(std::vector<Coordinator*> &coordinators, const std::vector<MemoryServer*> &memoryServers);
 	void setup();
 	void resetMemoryServers();
-	void constructChange(Change **change, std::vector<std::string> updateKeys, std::vector<std::string> pureDependencies);
-	void updateBucketInfo(std::vector<std::string> updateKeys, std::vector<std::string> pureDependencies, Pointer &newEntryPointer);
+	void constructChange(Change **change, const std::vector<std::string> updateKeys, const std::vector<std::string> pureDependencies);
+	void updateBucketInfo(const std::vector<std::string> &updateKeys, const std::vector<std::string> &pureDependencies, const Pointer &newEntryPointer);
+
 }
 
 #endif /* AGENTSHANDLER_HPP_ */
