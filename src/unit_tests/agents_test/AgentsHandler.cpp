@@ -32,7 +32,7 @@ void agents_handler::connectCoordsToMSs(std::vector<Coordinator*> &coordinators,
 	for (primitive::coordinator_num_t c = 0; c < config::COORDINATOR_CNT; c++) {
 		std::vector<MemoryServerContext> memoryServerCtxs;
 		for (size_t m = 0; m < config::MEMORY_SERVER_CNT; m++) {
-			MemoryServerContext* mscTmp = new MemoryServerContext (*memoryServers.at(m), true);
+			MemoryServerContext* mscTmp = new MemoryServerContext (m, *memoryServers.at(m), true);
 			memoryServerCtxs.push_back(*mscTmp);
 		}
 		// assign to coordinators

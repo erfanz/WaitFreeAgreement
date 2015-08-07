@@ -24,7 +24,6 @@ private:
 	primitive::entry_size_t length_;
 	primitive::offset_t offset_;
 
-
 public:
 	Pointer();
 	Pointer(primitive::coordinator_num_t coordinatorNum, primitive::generation_num_t generationNum, primitive::entry_size_t length, primitive::offset_t offset);

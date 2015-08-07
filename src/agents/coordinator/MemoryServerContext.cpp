@@ -19,13 +19,15 @@
 #define CLASS_NAME	"MSCtx"
 
 
-MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLocal){
+MemoryServerContext::MemoryServerContext(size_t memServerCtxID, MemoryServer &memoryServer, bool isLocal){
 	std::atomic<uint64_t>*	bucketHash;
 	std::atomic<uint64_t>*	bucketValid;
 	std::atomic<char>**	logJournal;
 	memoryServer.getMemoryHandlers(&bucketValid, &bucketHash, &logJournal);
 
+	memServerCtxID_ = memServerCtxID;
 	this->isLocal_ = isLocal;
+
 	if (isLocal_) {
 		bucketHash_ = new LocalRegionContext<uint64_t>(bucketHash);
 		bucketValid_ = new LocalRegionContext<uint64_t>(bucketValid);
@@ -35,7 +37,7 @@ MemoryServerContext::MemoryServerContext(MemoryServer &memoryServer, bool isLoca
 			logJournals_[i] = new LocalRegionContext<char>(logJournal[i]);
 		}
 	}
-	DEBUG_COUT(CLASS_NAME, __func__, "Memory Server Context created");
+	DEBUG_COUT(CLASS_NAME, __func__, "Memory Server Context " << (int)memServerCtxID_ << " created");
 }
 
 void MemoryServerContext::writeLogEntry(const primitive::coordinator_num_t cID, const LogEntry &entry, std::promise<ErrorType> &errorProm) {
@@ -59,7 +61,7 @@ void MemoryServerContext::readLogEntry(const Pointer &pointer, std::promise<Erro
 		std::string tempStr(readBuffer);
 		std::istringstream is(tempStr);
 		LogEntry::deserialize(is, entry);
-		DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString() << " read from log journal[" << (int)cID << "]");
+		DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString() << " read from log journal[" << (int)cID << "] from MS " << memServerCtxID_);
 	}
 
 	errorProm.set_value(eType);
@@ -77,7 +79,8 @@ void MemoryServerContext::readBucketHash(const size_t bucketID, std::promise<Err
 
 	pointer = Pointer::makePointer(readBuffer[0]);
 
-	DEBUG_COUT(CLASS_NAME, __func__, "Bucket hash " << bucketID << " read. It points to " << pointer.toHexString());
+	DEBUG_COUT(CLASS_NAME, __func__, "Bucket hash " << bucketID << " read from MS " << memServerCtxID_
+			<<  ". It points to " << pointer.toHexString());
 
 	if (pointer.isNull())
 		errorProm.set_value(error::KEY_NOT_FOUND);
@@ -100,12 +103,12 @@ void MemoryServerContext::swapBucketHash(const size_t bucketID,
 		// TODO: if we know for sure that (expected == expectedHead.toULL()),
 		// then instead of the following line, we can write actualCurrentHead = expectedHead;
 		actualHead = expectedHead;
-		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket hash " << bucketID
+		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket hash " << bucketID << " on MS " << memServerCtxID_
 				<< " succeeded (expected: " << expectedHead.toHexString() << ", real: " << actualHead.toHexString() << ")");
 	}
 	else {
 		actualHead = Pointer::makePointer(expected);
-		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket hash " << bucketID
+		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket hash " << bucketID << " on MS " << memServerCtxID_
 						<< " failed (expected: " << expectedHead.toHexString() << ", real: " << actualHead.toHexString() << ")");
 	}
 	errorProm.set_value(eType);

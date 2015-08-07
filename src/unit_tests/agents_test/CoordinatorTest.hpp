@@ -27,6 +27,8 @@ private:
 	static void test_check_serialized_when_all_serialized();
 	static void test_check_serialized_when_some_serialized();
 	static void test_check_serialized_when_none_serialized();
+	static void test_resolve_conflict_case1();
+
 //	static void test_read_non_existing_key();
 //
 //	static void test_no_key_update();

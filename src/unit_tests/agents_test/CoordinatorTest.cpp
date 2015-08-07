@@ -38,19 +38,19 @@ void CoordinatorTest::test_all() {
 	agents_handler::setup();
 	srand ((unsigned int)time(NULL));
 
-	//test_check_serialized_when_all_serialized();
+	test_check_serialized_when_all_serialized();
 	//test_check_serialized_when_some_serialized();
-	test_check_serialized_when_none_serialized();
+	// test_check_serialized_when_none_serialized();
+	//test_resolve_conflict_case1();
 }
 
 void CoordinatorTest::test_check_serialized_when_all_serialized() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 	agents_handler::resetMemoryServers();
 
-	LogEntry *entry = NULL;
+	LogEntry headEntry;
 	Pointer entryPointer;
 	Value returnValue;
-	Pointer pointerToEntry;
 	ErrorType eType;
 
 	Change* change;
@@ -76,17 +76,16 @@ void CoordinatorTest::test_check_serialized_when_all_serialized() {
 
 
 	const Key k1("k1");
-	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k1, returnValue, pointerToEntry);
+	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k1, returnValue, headEntry);
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k1.getId())->second) == 0);
-	assert(entryPointer.isEqual(pointerToEntry));
+	//assert(entryPointer.isEqual(headEntry.getCurrentP()));
 
 	const Key k2("k2");
-	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k2, returnValue, pointerToEntry);
+	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k2, returnValue, headEntry);
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k2.getId())->second) == 0);
-
-	assert(entryPointer.isEqual(pointerToEntry));
+	//assert(entryPointer.isEqual(headEntry.getCurrentP()));
 }
 
 void CoordinatorTest::test_check_serialized_when_some_serialized() {
@@ -97,9 +96,9 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	std::future<ErrorType> errorFut = errorProm.get_future();
 
 	LogEntry *entry = NULL;
+	LogEntry headEntry;
 	Pointer *entryPointer = new Pointer();
 	Value returnValue;
-	Pointer pointerToEntry;
 	ErrorType eType;
 
 	Change* change;
@@ -133,16 +132,16 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	agents_handler::updateBucketInfo(updateKeys, pureDependencies, *entryPointer);
 
 	const Key k1("k1");
-	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k1, returnValue, pointerToEntry);
+	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k1, returnValue, headEntry);
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k1.getId())->second) == 0);
-	assert(entryPointer->isEqual(pointerToEntry));
+	assert(entryPointer->isEqual(headEntry.getCurrentP()));
 
 	const Key k2("k2");
-	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k2, returnValue, pointerToEntry);
+	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k2, returnValue, headEntry);
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k2.getId())->second) == 0);
-	assert(entryPointer->isEqual(pointerToEntry));
+	assert(entryPointer->isEqual(headEntry.getCurrentP()));
 }
 
 void CoordinatorTest::test_check_serialized_when_none_serialized() {
@@ -150,9 +149,9 @@ void CoordinatorTest::test_check_serialized_when_none_serialized() {
 	agents_handler::resetMemoryServers();
 
 	LogEntry *entry = NULL;
+	LogEntry headEntry;
 	Pointer *entryPointer = new Pointer();
 	Value returnValue;
-	Pointer pointerToEntry;
 	ErrorType eType;
 
 	Change* change;
@@ -173,8 +172,67 @@ void CoordinatorTest::test_check_serialized_when_none_serialized() {
 	agents_handler::updateBucketInfo(updateKeys, pureDependencies, *entryPointer);
 
 	const Key k1("k1");
-	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k1, returnValue, pointerToEntry);
+	eType = agents_handler::coordinators.at(config::COORDINATOR_CNT - 1)->readLatest(k1, returnValue, headEntry);
 	assert(eType == error::SUCCESS);
 	assert(returnValue.getContent().compare(agents_handler::keyToValueMap.find(k1.getId())->second) == 0);
-	assert(entryPointer->isEqual(pointerToEntry));
+	assert(entryPointer->isEqual(headEntry.getCurrentP()));
+}
+
+
+
+void CoordinatorTest::test_resolve_conflict_case1() {
+	TestBase::printMessage(CLASS_NAME, __func__);
+	agents_handler::resetMemoryServers();
+
+	assert(config::COORDINATOR_CNT == 2);
+
+	LogEntry *entry = NULL;
+	Pointer *entryPointer = new Pointer();
+	Value returnValue;
+	Pointer pointerToEntry;
+	ErrorType eType;
+	LogEntry headEntry;
+
+	Change* change;
+	TID tid;
+	std::vector<std::string> updateKeys;
+	std::vector<std::string> pureDependencies;
+
+	std::promise<ErrorType>	errorProm1, errorProm2;
+	std::future<ErrorType>	errorFut1, errorFut2;
+	errorFut1 = errorProm1.get_future();
+	errorFut2 = errorProm2.get_future();
+
+	Pointer actualHead;
+
+
+	updateKeys = {"k1"};
+	pureDependencies = {};
+	agents_handler::constructChange(&change, updateKeys, pureDependencies);
+	agents_handler::coordinators.at(0)->createNewPointer(*change, &entryPointer);
+	agents_handler::coordinators.at(0)->makeNewLogEntry(*change, *entryPointer, &entry);
+	agents_handler::coordinators.at(0)->propagateLogEntry(*entry);
+
+	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).swapBucketHash(
+			entry->getDependencies()[0].getBucketID(), entry->getDependencies()[0].getPointer(), entry->getCurrentP(), errorProm1, actualHead);
+
+	if (errorFut1.get() != error::SUCCESS) {
+		DEBUG_COUT(CLASS_NAME, __func__, "CASing entry " << entry->getCurrentP().toHexString() << " failed");
+	}
+
+	updateKeys = {"k2"};
+	pureDependencies = {};
+	agents_handler::constructChange(&change, updateKeys, pureDependencies);
+	agents_handler::coordinators.at(1)->createNewPointer(*change, &entryPointer);
+	agents_handler::coordinators.at(1)->makeNewLogEntry(*change, *entryPointer, &entry);
+	agents_handler::coordinators.at(1)->propagateLogEntry(*entry);
+
+	agents_handler::coordinators.at(1)->memoryServerCtxs_.at(1).swapBucketHash(
+			entry->getDependencies()[0].getBucketID(), entry->getDependencies()[0].getPointer(), entry->getCurrentP(), errorProm2, actualHead);
+
+	if (errorFut2.get() != error::SUCCESS) {
+		DEBUG_COUT(CLASS_NAME, __func__, "CASing entry " << entry->getCurrentP().toHexString() << " failed");
+	}
+
+	agents_handler::coordinators.at(1)->resolve(0, headEntry);
 }

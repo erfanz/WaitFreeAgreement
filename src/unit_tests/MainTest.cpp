@@ -31,7 +31,7 @@ int main() {
 	appendVector(allTestFunctions, DependencyTest::getFunctionList());
 	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
 	appendVector(allTestFunctions, LocalRegionContextTest::getFunctionList());
-	// appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
+	appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
 	appendVector(allTestFunctions, CoordinatorTest::getFunctionList());
 
 	for (std::size_t i = 0; i < allTestFunctions.size(); i++){

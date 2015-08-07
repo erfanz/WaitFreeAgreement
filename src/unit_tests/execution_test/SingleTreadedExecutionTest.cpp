@@ -65,13 +65,14 @@ void SingleTreadedExecutionTest::test_simple_put_and_get() {
 	std::vector<int> expectedDepth = {1, 1};
 
 	Value value;
+	LogEntry headEntry;
 	SCN scn(1);
 	int searchDepth;
 
 	for (size_t i = 0; i < readKeys.size(); i++) {
 		for (size_t c = 0; c < config::COORDINATOR_CNT; c++) {
 			Key key(readKeys.at(i));
-			error::ErrorType eType = agents_handler::coordinators.at(c)->readByKey(key, scn, tid, value, searchDepth);
+			error::ErrorType eType = agents_handler::coordinators.at(c)->readLatest(key, value, headEntry);
 			assert(eType == error::SUCCESS && value.isEqual(agents_handler::keyToValueMap[readKeys.at(i)]));
 		}
 	}
@@ -83,12 +84,13 @@ void SingleTreadedExecutionTest::test_read_non_existing_key() {
 
 	Key k1("k1");
 	Value value;
+	LogEntry headEntry;
 	SCN scn(1);
 	TID tid;
 	tid.id = 12;
 	int searchDepth;
 
-	error::ErrorType eType = agents_handler::coordinators.at(0)->readByKey(k1, scn, tid, value, searchDepth);
+	error::ErrorType eType = agents_handler::coordinators.at(0)->readLatest(k1, value, headEntry);
 	assert(eType == error::KEY_NOT_FOUND);
 }
 
@@ -133,13 +135,14 @@ void SingleTreadedExecutionTest::test_no_dependency() {
 	std::vector<int> expectedDepth = {1, 1, 1, 1};
 
 	Value value;
+	LogEntry headEntry;
 	SCN scn(1);
 	int searchDepth;
 
 	for (size_t i = 0; i < readKeys.size(); i++) {
 		for (size_t c = 0; c < config::COORDINATOR_CNT; c++) {
 			Key key(readKeys.at(i));
-			error::ErrorType eType = agents_handler::coordinators.at(c)->readByKey(key, scn, tid, value, searchDepth);
+			error::ErrorType eType = agents_handler::coordinators.at(c)->readLatest(key, value, headEntry);
 			assert(eType == error::SUCCESS && value.isEqual(agents_handler::keyToValueMap[readKeys.at(i)]));
 		}
 	}
@@ -210,13 +213,14 @@ void SingleTreadedExecutionTest::test_complex_entry_chain() {
 	std::vector<int> expectedDepth = {4, 3, 3, 2, 1};
 
 	Value value;
+	LogEntry headEntry;
 	SCN scn(1);
 	int searchDepth;
 
 	for (size_t i = 0; i < readKeys.size(); i++) {
 		for (size_t c = 0; c < config::COORDINATOR_CNT; c++) {
 			Key key(readKeys.at(i));
-			error::ErrorType eType = agents_handler::coordinators.at(c)->readByKey(key, scn, tid, value, searchDepth);
+			error::ErrorType eType = agents_handler::coordinators.at(c)->readLatest(key, value, headEntry);
 			assert(eType == error::SUCCESS && value.isEqual(agents_handler::keyToValueMap[readKeys.at(i)]));
 		}
 	}

@@ -23,6 +23,7 @@ typedef error::ErrorType ErrorType;
 
 class MemoryServerContext {
 private:
+	size_t memServerCtxID_;
 	bool isLocal_;
 	LocalRegionContext<uint64_t>* bucketHash_;
 	LocalRegionContext<uint64_t>* bucketValid_;
@@ -31,7 +32,7 @@ private:
 
 public:
 	friend class CoordinatorTest;	// since we want to test even private member methods of Coordinator in our unit tests
-	MemoryServerContext(MemoryServer &memServer, bool isLocal);
+	MemoryServerContext(size_t memServerCtxID, MemoryServer &memServer, bool isLocal);
 
 	void writeLogEntry(const primitive::coordinator_num_t cID, const LogEntry &entry, std::promise<ErrorType> &errorProm);
 	void readLogEntry(const Pointer &pointer, std::promise<ErrorType> &errorProm, LogEntry &entry) const;

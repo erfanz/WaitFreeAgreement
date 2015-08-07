@@ -6,8 +6,8 @@ BUILDDIR = build/widgets
 
 TEST_MODULES	:= unit_tests unit_tests/base_types_test unit_tests/region_test unit_tests/execution_test unit_tests/agents_test
 AGENTS_MODULES	:= agents/coordinator agents/garbage_collector agents/memory_server 
-MODULES   := base_types agents util errors region $(AGENTS_MODULES) $(TEST_MODULES)	# uncomment this line for unit testing
-#MODULES   := base_types agents util errors region $(AGENTS_MODULES) execution_test		# uncomment this line for execution testing
+MODULES			:= base_types agents util errors region graph  $(AGENTS_MODULES) $(TEST_MODULES)	# uncomment this line for unit testing
+#MODULES		:= base_types agents util errors region $(AGENTS_MODULES) execution_test		# uncomment this line for execution testing
 SRC_DIR   := $(addprefix src/,$(MODULES))
 BUILD_DIR := $(addprefix build/,$(MODULES))
 EXE_DIR   := exe

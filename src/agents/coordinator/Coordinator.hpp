@@ -21,6 +21,8 @@
 #include "../../util/utils.hpp"
 #include <vector>
 #include <set>
+#include <map>
+
 
 typedef error::ErrorType ErrorType;
 
@@ -33,16 +35,17 @@ private:
 	std::vector<MemoryServerContext>	memoryServerCtxs_;
 	size_t								localMSCtxIndex_;
 
-	template <typename container> ErrorType readBucketHeadsFromAllReplicas(const container &readBuckets, std::vector<std::vector<Pointer> > &pointers);
+	template <typename container> ErrorType readBucketHeadsFromAllReplicas(const container &readBuckets, std::vector<std::map<size_t, Pointer> > &bucketHeads);
 	ErrorType blockingReadEntry(const Pointer &pointer, LogEntry &entry);
-	bool checkIfBlocks (LogEntry blockingEntry, LogEntry blockedEntry);
+	//bool checkIfBlocks (const LogEntry &biggerEntry, const LogEntry &smallerEntry, const std::vector<std::map<size_t, Pointer> > &bucketHeads);
+	bool isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, std::map<Pointer, LogEntry> &pointerToEntryMap) const;
+	ErrorType finishMakingSerialized(const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, std::map<Pointer, LogEntry> &pointerToEntryMap);
 
 	ErrorType propagateLogEntry(LogEntry &entry);
 	ErrorType createNewPointer(Change &change, Pointer **pointer);
 	ErrorType makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry **entry) const;
 	ErrorType publishChanges(LogEntry &entry);
-	ErrorType makeSerialized(const LogEntry &entry, const LogEntry::Status serializedFlag);
-	void errorHandler(const ErrorType eType);
+	ErrorType replicateSerializationStatus(const LogEntry &entry, const LogEntry::Status serializedFlag);
 
 public:
 	friend class CoordinatorTest;	// since we want to test even private member methods of Coordinator in our unit tests
@@ -50,13 +53,10 @@ public:
 	~Coordinator();
 	ErrorType connectToMemoryServers(std::vector<MemoryServerContext> memoryServerCtxs);
 	ErrorType applyChange(Change &change, TID tID, Pointer &newEntryPointer);
-	ErrorType readLatest(const Key &key, Value &returnValue, Pointer &pointerToEntry);
+	ErrorType readLatest(const Key &key, Value &returnValue, LogEntry &headEntry);
 	ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue, int &searchDepth);
-	ErrorType checkIfSerialized(LogEntry &entry);
-	ErrorType resolveConflict(size_t bucketID, Pointer &newHead);
-	void getEligibleCandidates(const std::vector<std::vector<Pointer> > &currentHeads, std::set<LogEntry> &candidates) const;
-	bool checkIfEligible(const LogEntry &entry) const;
-	void chooseWinnerEntry(const std::set<LogEntry> &candidates, LogEntry &winner) const;
+	ErrorType checkIfSerialized(const LogEntry &entry);
+	ErrorType resolve(const size_t bucketID, LogEntry &headEntry);
 
 };
 

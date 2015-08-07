@@ -19,7 +19,7 @@ namespace config {
 	#define DEBUG_ENABLED (true)
 
 
-	static const int	MEMORY_SERVER_CNT	= 3;
+	static const int	MEMORY_SERVER_CNT	= 2;
 	static const int	COORDINATOR_CNT 	= 2;
 
 	static const int	OPERATION_CNT 		= 100;
