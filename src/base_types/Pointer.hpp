@@ -15,8 +15,6 @@
 #include <string>
 
 
-
-
 class Pointer : public Serializable<Pointer>{
 private:
 	primitive::coordinator_num_t coordinatorNum_;
@@ -26,7 +24,7 @@ private:
 
 public:
 	Pointer();
-	Pointer(primitive::coordinator_num_t coordinatorNum, primitive::generation_num_t generationNum, primitive::entry_size_t length, primitive::offset_t offset);
+	Pointer(const primitive::coordinator_num_t coordinatorNum, const primitive::generation_num_t generationNum, const primitive::entry_size_t length, const primitive::offset_t offset);
 	bool operator< (const Pointer &right) const;		// needed for set operation
 	bool operator> (const Pointer &right) const;		// needed for set operation
 	bool isEqual(const Pointer &pointer) const;
@@ -52,7 +50,7 @@ public:
 	std::string toString() const;
 	std::string toHexString() const;
 	// int compare(const Pointer &pointer) const;
-	static void fromBinaryString(std::string serialized, Pointer &pointer);
+	static void fromBinaryString(const std::string &serialized, Pointer &pointer);
 	static void doDeserialize(std::istream& stream, Pointer &p);
 };
 

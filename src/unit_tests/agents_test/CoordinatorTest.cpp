@@ -128,7 +128,7 @@ void CoordinatorTest::test_check_serialized_when_some_serialized() {
 	agents_handler::coordinators.at(0)->propagateLogEntry(*newEntry2);
 	agents_handler::coordinators.at(0)->publishChanges(*newEntry2);
 	// instead of agents_handler::coordinators.at(0)->makeSerialized(*entry), we have:
-	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).markSerialized(*newEntry2, LogEntry::Status::SERIALIZED_SUCCESSFUL, errorProm);
+	agents_handler::coordinators.at(0)->memoryServerCtxs_.at(0).markState(*newEntry2, EntryState::SERIALIZED, errorProm);
 	eType = errorFut.get();
 	assert(eType == error::SUCCESS);
 
@@ -161,7 +161,6 @@ void CoordinatorTest::test_check_serialized_when_none_serialized() {
 	ErrorType eType;
 
 	Change* change;
-	TID tid;
 	std::vector<std::string> updateKeys;
 	std::vector<std::string> pureDependencies;
 
@@ -196,11 +195,9 @@ void CoordinatorTest::test_resolve_conflict_case1() {
 	Pointer *entryPointer = new Pointer();
 	Value returnValue;
 	Pointer pointerToEntry;
-	ErrorType eType;
 	LogEntry headEntry;
 
 	Change* change;
-	TID tid;
 	std::vector<std::string> updateKeys;
 	std::vector<std::string> pureDependencies;
 

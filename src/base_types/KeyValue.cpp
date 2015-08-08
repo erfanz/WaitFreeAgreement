@@ -14,7 +14,7 @@ KeyValue::KeyValue(){
 }
 
 
-KeyValue::KeyValue(Key k, Value v) {
+KeyValue::KeyValue(const Key &k, const Value &v) {
 	this->key_ = k;
 	this->value_ = v;
 }

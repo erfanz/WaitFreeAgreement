@@ -10,10 +10,13 @@
 #include "Key.hpp"
 #include "../config.hpp"
 
+#define CLASS_NAME	"Key"
+
+
 Key::Key() {
 	;
 }
-Key::Key(std::string id) {
+Key::Key(const std::string &id) {
 	this->id_ = id;
 }
 

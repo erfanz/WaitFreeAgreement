@@ -8,6 +8,7 @@
  */
 
 #include "LogEntryTest.hpp"
+#include "../../base_types/EntryState.hpp"
 #include "../../base_types/PrimitiveTypes.hpp"	// primitive::entry_size_t
 #include <assert.h>
 #include <sstream>      // std::ostringstream, std::istringstream
@@ -63,7 +64,7 @@ LogEntry* LogEntryTest::makeLogEntry() {
 
 	Pointer pointer(cID, gNum, entrySize, offset);
 
-	return new LogEntry(dependencies, kvList, pointer, LogEntry::Status::UNKNOWN);
+	return new LogEntry(dependencies, kvList, pointer, EntryState::UNKNOWN);
 }
 
 std::vector<std::function<void()>>& LogEntryTest::getFunctionList() {
@@ -103,10 +104,10 @@ void LogEntryTest::test_constructor() {
 
 	Pointer pc = Pointer::makePointer(0x1000000000000001);
 
-	LogEntry entry(dependencies, updates, pc, LogEntry::Status::UNKNOWN);
+	LogEntry entry(dependencies, updates, pc, EntryState::UNKNOWN);
 
 	assert(entry.getCurrentP().isEqual(pc) == true);
-	assert(entry.getSerializedStatus() == LogEntry::Status::UNKNOWN);
+	assert(entry.getState() == EntryState::UNKNOWN);
 
 	std::vector<Dependency> depList = entry.getDependencies();
 	assert(depList.size() == dependencies.size());
@@ -150,7 +151,7 @@ void LogEntryTest::test_serialize() {
 	kvList.push_back(kv2);
 
 
-	LogEntry entry(dependencies, kvList, Pointer::makePointer(0x1000000000000001), LogEntry::Status::UNKNOWN);
+	LogEntry entry(dependencies, kvList, Pointer::makePointer(0x1000000000000001), EntryState::UNKNOWN);
 
 	std::string expected = entry.getCurrentP().toString() + " "
 			+ "0" + " "		// isSerialized

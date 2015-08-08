@@ -11,11 +11,14 @@
 #include "../util/utils.hpp"	// for toString()
 #include <sstream>      // std::ostringstream
 
+#define CLASS_NAME	"Dependency"
+
+
 Dependency::Dependency() {
 	;
 }
 
-Dependency::Dependency(size_t bucketID, Pointer pointer) {
+Dependency::Dependency(const size_t bucketID, const Pointer &pointer) {
 	this->bucketID_ = bucketID;
 	this->pointer_ = pointer;
 }
@@ -32,7 +35,7 @@ void Dependency::setBucketID(const size_t bucketID) {
 	this->bucketID_ = bucketID;
 }
 
-void Dependency::setPointer(const Pointer p) {
+void Dependency::setPointer(const Pointer &p) {
 	this->pointer_ = p;
 }
 

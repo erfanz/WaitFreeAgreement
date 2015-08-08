@@ -20,7 +20,7 @@ private:
 	size_t hashedKey_;
 
 public:
-	HashMaker(std::string id) {hashedKey_ =  std::hash<std::string>()(id) % config::HASH_SIZE ;}
+	HashMaker(const std::string &id) {hashedKey_ =  std::hash<std::string>()(id) % config::HASH_SIZE ;}
 	size_t getHashed() const {return hashedKey_;}
 
 };

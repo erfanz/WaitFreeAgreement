@@ -19,7 +19,7 @@
 #define CLASS_NAME	"MSCtx"
 
 
-MemoryServerContext::MemoryServerContext(size_t memServerCtxID, MemoryServer &memoryServer, bool isLocal){
+MemoryServerContext::MemoryServerContext(const size_t memServerCtxID, MemoryServer &memoryServer, bool isLocal){
 	std::atomic<uint64_t>*	bucketHash;
 	std::atomic<uint64_t>*	bucketValid;
 	std::atomic<char>**	logJournal;
@@ -148,20 +148,20 @@ ErrorType MemoryServerContext::swapMultipleBucketHash(const std::vector<Dependen
 }
 */
 
-void MemoryServerContext::markSerialized(const LogEntry &entry, const LogEntry::Status serializedStatus, std::promise<ErrorType> &errorProm) {
+void MemoryServerContext::markState(const LogEntry &entry, const EntryState::State state, std::promise<ErrorType> &errorProm) {
 	const primitive::coordinator_num_t	coordinatorID	= entry.getCurrentP().getCoordinatorNum();
 	std::size_t 						writeLength		= 1;	// we only want to change one byte, which is the serialization flag
 	primitive::offset_t					offset			= (primitive::offset_t)(entry.getCurrentP().getOffset()
 			+ Pointer::getTotalSize() + 1);		// since we first store the pointer and a whitespace before the serialized flag.
 
-	const std::string& trueFlag = utilities::ToString<int>(serializedStatus);
+	const std::string& trueFlag = utilities::ToString<int>(state);
 	const char* cstr = trueFlag.c_str();
 
 	ErrorType eType = logJournals_[coordinatorID]->write(cstr, offset, writeLength);
 	errorProm.set_value(eType);
 }
 
-void MemoryServerContext::checkSerializedStatus(const LogEntry &entry, std::promise<ErrorType> &errorProm, LogEntry::Status &entryStatus) {
+void MemoryServerContext::checkState(const LogEntry &entry, std::promise<ErrorType> &errorProm, EntryState::State &state) {
 	char readBuffer[1];	// the serialization flag is 1 or 0
 	const primitive::coordinator_num_t	coordinatorID	= entry.getCurrentP().getCoordinatorNum();
 	std::size_t 						readLength		= 1;	// we only want to change one byte, which is the serialization flag
@@ -171,7 +171,8 @@ void MemoryServerContext::checkSerializedStatus(const LogEntry &entry, std::prom
 	ErrorType eType = logJournals_[coordinatorID]->read(readBuffer, offset, readLength);
 	if (eType == error::SUCCESS) {
 		char *pNext;
-		entryStatus = static_cast<LogEntry::Status>(strtoul (readBuffer, &pNext, 10));
+		state = static_cast<EntryState::State>(strtoul (readBuffer, &pNext, 10));
 	}
 	errorProm.set_value(eType);
 }
+

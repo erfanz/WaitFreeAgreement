@@ -12,6 +12,7 @@
 
 #include "MemoryServerContext.hpp"
 #include "../../base_types/LogEntry.hpp"
+#include "../../base_types/EntryState.hpp"
 #include "../../base_types/KeyValue.hpp"
 #include "../../base_types/Change.hpp"
 #include "../../base_types/PrimitiveTypes.hpp"	// primitive::XXX
@@ -38,23 +39,23 @@ private:
 	template <typename container> ErrorType readBucketHeadsFromAllReplicas(const container &readBuckets, std::vector<std::map<size_t, Pointer> > &bucketHeads);
 	ErrorType blockingReadEntry(const Pointer &pointer, LogEntry &entry);
 	//bool checkIfBlocks (const LogEntry &biggerEntry, const LogEntry &smallerEntry, const std::vector<std::map<size_t, Pointer> > &bucketHeads);
-	bool isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, std::map<Pointer, LogEntry> &pointerToEntryMap) const;
-	ErrorType finishMakingSerialized(const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, std::map<Pointer, LogEntry> &pointerToEntryMap);
+	bool isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap) const;
+	ErrorType finishMakingSerialized(const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap);
 
-	ErrorType propagateLogEntry(LogEntry &entry);
-	ErrorType createNewPointer(Change &change, Pointer **pointer);
-	ErrorType makeNewLogEntry(Change &change, Pointer &entryPointer, LogEntry **entry) const;
-	ErrorType publishChanges(LogEntry &entry);
-	ErrorType replicateSerializationStatus(const LogEntry &entry, const LogEntry::Status serializedFlag);
+	ErrorType createNewPointer(const Change &change, Pointer **pointer);
+	ErrorType makeNewLogEntry(const Change &change, const Pointer &entryPointer, LogEntry **entry) const;
+	ErrorType propagateLogEntry(const LogEntry &entry);
+	ErrorType publishChanges(const LogEntry &entry);
+	ErrorType replicateState(const LogEntry &entry, const EntryState::State state);
 
 public:
 	friend class CoordinatorTest;	// since we want to test even private member methods of Coordinator in our unit tests
 	Coordinator(primitive::coordinator_num_t coordinatorID);
 	~Coordinator();
 	ErrorType connectToMemoryServers(std::vector<MemoryServerContext> memoryServerCtxs);
-	ErrorType applyChange(Change &change, TID tID, LogEntry **newEntry);
+	ErrorType applyChange(const Change &change, const TID tID, LogEntry **newEntry);
 	ErrorType readLatest(const Key &key, Value &returnValue, LogEntry &headEntry);
-	ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue, int &searchDepth);
+	//ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue);
 	ErrorType checkIfSerialized(const LogEntry &entry);
 	ErrorType resolve(const size_t bucketID, LogEntry &headEntry);
 

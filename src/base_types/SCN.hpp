@@ -15,7 +15,7 @@ private:
 	uint64_t id_;
 
 public:
-	SCN(uint64_t id){this->id_ = id;}
+	SCN(const uint64_t id){this->id_ = id;}
 	uint64_t getId() const {return id_;}
 
 	bool isSCNCompatible(const SCN missedSCN) const {

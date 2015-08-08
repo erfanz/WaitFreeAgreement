@@ -27,7 +27,7 @@ private:
 
 public:
 	KeyValue();
-	KeyValue(Key, Value);
+	KeyValue(const Key &, const Value &);
 	const Key& getKey() const;
 	const Value& getValue() const;
 	size_t getTotalSize() const;

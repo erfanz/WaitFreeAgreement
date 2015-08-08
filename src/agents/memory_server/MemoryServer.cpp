@@ -9,6 +9,10 @@
 
 #include "MemoryServer.hpp"
 #include "../../config.hpp"
+#include "../../util/utils.hpp"
+
+#define CLASS_NAME	"MemoryServer"
+
 
 
 MemoryServer::MemoryServer(){
@@ -51,4 +55,5 @@ MemoryServer::~MemoryServer(){
 		delete [] logJournals_[i];
 	}
 	delete [] logJournals_;
+	DEBUG_COUT (CLASS_NAME, __func__, "Memory Server destroyed!");
 }

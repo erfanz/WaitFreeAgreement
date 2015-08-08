@@ -19,7 +19,7 @@ private:
 
 public:
 	Value();
-	Value(std::string content);
+	Value(const std::string &content);
 	const std::string& getContent() const;
 	uint32_t getSize() const;
 	void setContent(const std::string &);

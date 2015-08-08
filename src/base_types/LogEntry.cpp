@@ -14,23 +14,17 @@
 #include <iomanip>      // std::setw
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
 
-#define CLASS_NAME	"Coord"
+#define CLASS_NAME	"LogEntry"
 
 LogEntry::LogEntry() {
 	;
 }
-//LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> updates, Pointer currentP, bool serialized){
-//	this->dependencies_ = dependencies;
-//	this->updates_ = updates;
-//	this->currentP_ = currentP;
-//	this->serialized_ = serialized;
-//}
 
-LogEntry::LogEntry(std::vector<Dependency> dependencies, std::vector<KeyValue> updates, Pointer currentP, LogEntry::Status serializedStatus) {
+LogEntry::LogEntry(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates, const Pointer &currentP, const EntryState::State &state) {
 	this->dependencies_ = dependencies;
 	this->updates_ = updates;
 	this->currentP_ = currentP;
-	this->serializedStatus_ = serializedStatus;
+	this->state_ = state;
 }
 
 bool LogEntry::operator< (const LogEntry &right) const {
@@ -44,7 +38,7 @@ bool LogEntry::operator>(const LogEntry &right) const {
 
 bool LogEntry::isEqual(const LogEntry &entry) const {
 	if (! currentP_.isEqual(entry.getCurrentP())
-			|| serializedStatus_ != entry.getSerializedStatus()
+			|| state_ != entry.getState()
 			|| updates_.size() != entry.getUpdates().size()
 			|| dependencies_.size() != entry.getDependencies().size())
 		return false;
@@ -65,7 +59,7 @@ bool LogEntry::isEqual(const LogEntry &entry) const {
 void LogEntry::serialize(std::ostream& stream) const{
 	/*
 	 * - (a) Pointer to the current log entry
-	 * - (b) IsSerialized
+	 * - (b) state
 	 * - (c) DependencyCnt
 	 * - (d) Dependency_bucketID[DependencyCnt]
 	 * - (e) Dependency_pointer[DependencyCnt]
@@ -75,7 +69,7 @@ void LogEntry::serialize(std::ostream& stream) const{
 	 */
 
 	std::string str = currentP_.toString() + " ";
-	str += utilities::ToString<int>(getSerializedStatus()) + " ";
+	str += utilities::ToString<int>(getState()) + " ";
 	str += utilities::ToString<size_t>(dependencies_.size()) + " ";
 
 	for (size_t i=0; i < dependencies_.size(); i++)
@@ -106,8 +100,8 @@ void LogEntry::setCurrentP(const Pointer& currentP) {
 	this->currentP_ = currentP;
 }
 
-void LogEntry::setSerialized(LogEntry::Status serializedStatus) {
-	this->serializedStatus_ = serializedStatus;
+void LogEntry::setState(EntryState::State state) {
+	this->state_ = state;
 }
 
 void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
@@ -116,17 +110,15 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 
 	/* - Pointer to the current log entry 	*/
 	stream >> pointer_start;
-	//std::cout << "pointer_start " << pointer_start << std::endl;
 
-	/* - IsSerialized 						*/
-	unsigned int status;
-	stream >> status;
-	entry.serializedStatus_ = static_cast<LogEntry::Status>(status);
-	//std::cout << "serialized " << entry.serialized_ << std::endl;
+	/* - state		 						*/
+	unsigned int state;
+	stream >> state;
+	entry.state_ = static_cast<EntryState::State>(state);
+
 
 	/* - DependencyCnt						*/
 	stream >> dependencyCnt;
-	//std::cout << "dependencyCnt " << dependencyCnt << std::endl;
 
 	/* - Dependency_pucketID[DependencyCnt]
 	   - Dependency_pointer[DependencyCnt] 	*/
@@ -135,7 +127,6 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	for (int i = 0; i < dependencyCnt; i++){
 		stream >> bid;
 		entry.dependencies_.at(i).setBucketID(bid);
-		//std::cout << "bid dependency[] " << bid << std::endl;
 	}
 
 	std::string p;
@@ -144,19 +135,16 @@ void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 		Pointer dep_pointer;
 		Pointer::fromBinaryString(p, dep_pointer);
 		entry.dependencies_.at(i).setPointer(dep_pointer);
-		//std::cout << "pointer dependency[] " << dep_pointer.toHexString() << std::endl;
 	}
 
 	/* - UpdateCnt								*/
 	stream >> updateCnt;
-	//std::cout << "updateCnt " << updateCnt << std::endl;
 
 	/* - Updates[KVCnt]					*/
 	Pointer::fromBinaryString(pointer_start, entry.currentP_);
 	entry.updates_ = std::vector<KeyValue> (updateCnt);
 	for (int i = 0; i < updateCnt; i++){
 		KeyValue::deserialize(stream, entry.updates_[i]);
-		//std::cout << "update[] " << entry.updates_[i].toString() << std::endl;
 	}
 
 	/* - Pointer							*/
@@ -191,7 +179,7 @@ primitive::entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependenc
 	size_t size = 0;
 	size +=  Pointer::getTotalSize() + 1;								// for (a) Pointer to the current log entry, and the space after
 
-	size += 1 + 1;														// for (b) serializedStatus, and the space after
+	size += 1 + 1;														// for (b) state, and the space after
 	size += utilities::numDigits(int (dependencies.size())) + 1;		// for (c) dependencyCnt, and the space after
 
 	for (size_t i = 0; i < dependencies.size(); i++) {
@@ -209,8 +197,8 @@ primitive::entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependenc
 	return entrySize;
 }
 
-LogEntry::Status LogEntry::getSerializedStatus() const {
-	return serializedStatus_;
+EntryState::State LogEntry::getState() const {
+	return state_;
 }
 
 bool LogEntry::getUpdateIfExists(const Key &key, Value &value) const {

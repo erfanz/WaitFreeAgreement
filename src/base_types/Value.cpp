@@ -9,11 +9,14 @@
 
 #include "Value.hpp"
 
+#define CLASS_NAME	"Value"
+
+
 Value::Value(){
 	;
 }
 
-Value::Value(std::string content){
+Value::Value(const std::string &content){
 	this->content_ = content;
 }
 

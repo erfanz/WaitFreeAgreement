@@ -11,6 +11,7 @@
 #define LOCALREGIONCONTEXT_HPP_
 
 #include "AbstractRegionContext.hpp"
+#include "../util/utils.hpp"	// DEBUG_COUT()
 #include <cstring>	// std::memcpy()
 #include <atomic>
 
@@ -24,7 +25,7 @@ public:
 	ErrorType read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length);
 	ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length);
 	ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset);
-	ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets);
+	//ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets);
 	~LocalRegionContext();
 };
 
@@ -61,14 +62,14 @@ ErrorType LocalRegionContext<T>::CAS(T* expectedValue, const T &desiredValue, co
 		return error::CAS_FAILED;
 }
 
-template <typename T>
-ErrorType LocalRegionContext<T>::multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) {
-	return error::SUCCESS;
-}
+//template <typename T>
+//ErrorType LocalRegionContext<T>::multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) {
+//	return error::SUCCESS;
+//}
 
 template <typename T>
 LocalRegionContext<T>::~LocalRegionContext() {
-	// TODO Auto-generated destructor stub
+	DEBUG_COUT("LocalRegionCtx", __func__, "LocalRegionCtx destroyed!");
 }
 
 #endif /* LOCALREGIONCONTEXT_HPP_ */

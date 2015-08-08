@@ -19,7 +19,7 @@ private:
 	std::vector<KeyValue> updates_;
 	std::vector<Dependency> dependencies_;
 public:
-	Change(std::vector<KeyValue> updates, std::vector<Dependency> dependencies);
+	Change(const std::vector<KeyValue> &updates, const std::vector<Dependency> &dependencies);
 	~Change();
 	const std::vector<Dependency>& getDependencies() const;
 	const std::vector<KeyValue>& getUpdates() const;

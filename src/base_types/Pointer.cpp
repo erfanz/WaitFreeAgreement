@@ -11,13 +11,17 @@
 #include "../util/utils.hpp"	// for binary_to_string_uul()
 #include <iomanip>      // std::setw
 #include <sstream>      // std::ostringstream
-#include <bitset>        // std::bitset
+#include <bitset>       // std::bitset
+
+
+#define CLASS_NAME	"Pointer"
+
 
 Pointer::Pointer() {
 	;
 }
 
-Pointer::Pointer(primitive::coordinator_num_t coordinatorNum, primitive::generation_num_t generationNum, primitive::entry_size_t length, primitive::offset_t offset){
+Pointer::Pointer(const primitive::coordinator_num_t coordinatorNum, const primitive::generation_num_t generationNum, const primitive::entry_size_t length, const primitive::offset_t offset){
 	this->coordinatorNum_ = coordinatorNum;
 	this->generationNum_ = generationNum;
 	this->length_ = length;
@@ -101,7 +105,7 @@ std::string Pointer::toHexString() const{
 	return output;
 }
 
-void Pointer::fromBinaryString(std::string serialized, Pointer &p){
+void Pointer::fromBinaryString(const std::string &serialized, Pointer &p){
 	std::istringstream is(serialized);
 	doDeserialize(is, p);
 }

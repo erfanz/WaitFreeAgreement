@@ -10,7 +10,9 @@
 #include "Change.hpp"
 #include "../util/utils.hpp"
 
-Change::Change(std::vector<KeyValue> updates, std::vector<Dependency> dependencies)
+#define CLASS_NAME	"Change"
+
+Change::Change(const std::vector<KeyValue> &updates, const std::vector<Dependency> &dependencies)
 {
 	this->updates_ = updates;
 	this->dependencies_ = dependencies;

@@ -33,7 +33,7 @@ std::vector<std::function<void()>>& SingleTreadedExecutionTest::getFunctionList(
 void SingleTreadedExecutionTest::test_all() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 	agents_handler::setup();
-	srand (time(NULL));
+	srand ((unsigned int)time(NULL));
 
 	test_simple_put_and_get();
 	test_read_non_existing_key();
@@ -87,8 +87,6 @@ void SingleTreadedExecutionTest::test_read_non_existing_key() {
 	Value value;
 	LogEntry headEntry;
 	SCN scn(1);
-	TID tid;
-	tid.id = 12;
 
 	error::ErrorType eType = agents_handler::coordinators.at(0)->readLatest(k1, value, headEntry);
 	assert(eType == error::KEY_NOT_FOUND);

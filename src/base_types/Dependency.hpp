@@ -22,11 +22,11 @@ private:
 
 public:
 	Dependency();
-	Dependency(size_t bucketID, Pointer pointer);
+	Dependency(const size_t bucketID, const Pointer &pointer);
 	const size_t getBucketID() const;
 	const Pointer getPointer() const;
 	void setBucketID(const size_t bucketID);
-	void setPointer(const Pointer p);
+	void setPointer(const Pointer &p);
 	bool isEqual(const Dependency &) const;
 	std::string toString() const;
 	virtual void serialize(std::ostream& stream) const;

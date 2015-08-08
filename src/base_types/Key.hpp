@@ -20,7 +20,7 @@ private:
 
 public:
 	Key();
-	Key(std::string id);
+	Key(const std::string &id);
 	const std::string& getId() const;
 	void setId(const std::string& id);
 	HashMaker hashKey() const;
