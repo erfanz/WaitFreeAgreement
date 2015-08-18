@@ -12,8 +12,9 @@
 #include "base_types_test/KeyValueTest.hpp"
 #include "base_types_test/DependencyTest.hpp"
 #include "region_test/LocalRegionContextTest.hpp"
-#include "execution_test/SingleTreadedExecutionTest.hpp"
-#include "agents_test/CoordinatorTest.hpp"
+//#include "execution_test/SingleTreadedExecutionTest.hpp"
+//#include "agents_test/CoordinatorTest.hpp"
+#include "complete_test/CompleteTest.hpp"
 
 
 #include <functional>	// std::function
@@ -31,8 +32,9 @@ int main() {
 	appendVector(allTestFunctions, DependencyTest::getFunctionList());
 	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
 	appendVector(allTestFunctions, LocalRegionContextTest::getFunctionList());
-	appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
-	appendVector(allTestFunctions, CoordinatorTest::getFunctionList());
+	//appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
+	//appendVector(allTestFunctions, CoordinatorTest::getFunctionList());
+	appendVector(allTestFunctions, CompleteTest::getFunctionList());
 
 	for (std::size_t i = 0; i < allTestFunctions.size(); i++){
 		allTestFunctions.at(i)();

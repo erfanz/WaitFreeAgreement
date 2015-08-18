@@ -52,6 +52,8 @@ public:
 	// int compare(const Pointer &pointer) const;
 	static void fromBinaryString(const std::string &serialized, Pointer &pointer);
 	static void doDeserialize(std::istream& stream, Pointer &p);
+
+	void setToNull();
 };
 
 #endif /* POINTER_HPP_ */

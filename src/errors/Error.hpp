@@ -11,6 +11,8 @@
 #define ERROR_HPP_
 
 // #include "Throwable.hpp"
+#include <string>
+#include <map>
 
 #define TEST_NZ(x) do { if ( (x)) die("error: " #x " failed (returned non-zero).");  } while (0)
 #define TEST_Z(x)  do { if (!(x)) die("error: " #x " failed (returned zero/null)."); } while (0)
@@ -30,8 +32,12 @@ namespace error{
 		UNSERIALIZABLE,
 		RESOLVE_FAILED,
 		SET_WITH_NO_GET,
-		GET_POINTER_CHANGED
+		GET_POINTER_CHANGED,
+		UNKNOWN_REQUEST_TYPE
 	};
+//
+//	static std::map<int,std::string> createErrorCodeToStringMap ();
+//	static std::map<int, std::string> getErrorName = createErrorCodeToStringMap();
 
 	class Throwable;
 }

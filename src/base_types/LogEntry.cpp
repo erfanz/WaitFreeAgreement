@@ -220,3 +220,10 @@ bool LogEntry::getDependencyIfExists(const size_t bucketID, Pointer &pointer) co
 	}
 	return false;
 }
+
+void LogEntry::setToNull() {
+	dependencies_.clear();
+	updates_.clear();
+	currentP_.setToNull();
+	state_ = EntryState::State::SERIALIZED;
+}

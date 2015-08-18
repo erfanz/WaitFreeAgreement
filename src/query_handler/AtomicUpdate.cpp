@@ -15,12 +15,15 @@
 
 
 AtomicUpdate::AtomicUpdate(Coordinator *coordinator) {
+	DEBUG_COUT(CLASS_NAME, __func__, "Atomic Update with coordinator " << (int) coordinator->getID() << " created");
 	coordinator_ = coordinator;
 }
 
 ErrorType AtomicUpdate::get(const Key &key, Value &value) {
+	DEBUG_COUT(CLASS_NAME, __func__, "getting value for key " << key.getId());
+
 	LogEntry headEntry;
-	HashMaker h(key);
+	HashMaker h(key.getId());
 	size_t bucketID = h.getHashed();
 	std::map<size_t, Pointer>::const_iterator it;
 
@@ -34,15 +37,19 @@ ErrorType AtomicUpdate::get(const Key &key, Value &value) {
 			return error::GET_POINTER_CHANGED;
 
 		// Else, add the dependency
-		else
+		else {
+			DEBUG_COUT (CLASS_NAME, __func__, "Added the dependency dep[" << (int)bucketID << "] = " << headEntry.getCurrentP().toHexString());
 			dependencyMap_[bucketID] = headEntry.getCurrentP();
+		}
 	}
 	return eType;
 }
 
 ErrorType AtomicUpdate::set(const Key &key, const Value &value) {
+	DEBUG_COUT(CLASS_NAME, __func__, "setting value[" << key.getId() << "] = " << value.getContent());
+
 	KeyValue kv(key, value);
-	HashMaker h(key);
+	HashMaker h(key.getId());
 	size_t bucketID = h.getHashed();
 
 	if (dependencyMap_.find(bucketID) == dependencyMap_.end())
@@ -53,6 +60,8 @@ ErrorType AtomicUpdate::set(const Key &key, const Value &value) {
 }
 
 ErrorType AtomicUpdate::serialize() {
+	DEBUG_COUT(CLASS_NAME, __func__, "serializing the change");
+
 	TID tid;
 	ErrorType eType;
 
@@ -87,6 +96,6 @@ ErrorType AtomicUpdate::serialize() {
 }
 
 AtomicUpdate::~AtomicUpdate() {
-	DEBUG_COUT(CLASS_NAME, __func__, "Deconstructor called");
 	delete newEntry;	// which was allocated in Coordinator class
+	DEBUG_COUT(CLASS_NAME, __func__, "Atomic Update destroyed!");
 }

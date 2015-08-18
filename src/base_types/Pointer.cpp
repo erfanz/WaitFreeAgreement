@@ -165,3 +165,10 @@ void Pointer::setLength(const primitive::entry_size_t length) {
 void Pointer::setOffset(const primitive::offset_t offset) {
 	this->offset_ = offset;
 }
+
+void Pointer::setToNull() {
+	coordinatorNum_ = 0;
+	generationNum_ = 0;
+	length_ = 0;
+	offset_ = 0;
+}

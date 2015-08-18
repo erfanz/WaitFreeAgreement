@@ -46,6 +46,8 @@ public:
 	bool getUpdateIfExists(const Key &key, Value &value) const;
 	bool getDependencyIfExists(const size_t bucketID, Pointer &pointer) const;
 
+	void setToNull();
+
 private:
 	std::vector<Dependency> dependencies_;
 	std::vector<KeyValue> updates_;

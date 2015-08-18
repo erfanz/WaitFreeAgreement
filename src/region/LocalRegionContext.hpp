@@ -18,10 +18,10 @@
 template <typename T>
 class LocalRegionContext: public AbstractRegionContext<T> {
 private:
-	std::atomic<T>* buffer_;
+	std::atomic<T> *region_;
 
 public:
-	LocalRegionContext(std::atomic<T>* buffer);
+	LocalRegionContext(std::atomic<T>* region);
 	ErrorType read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length);
 	ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length);
 	ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset);
@@ -37,25 +37,25 @@ public:
  */
 
 template <typename T>
-LocalRegionContext<T>::LocalRegionContext(std::atomic<T>* buffer) {
-	this->buffer_ = buffer;
+LocalRegionContext<T>::LocalRegionContext(std::atomic<T>* region):
+region_(region) {
 }
 
 template <typename T>
 ErrorType LocalRegionContext<T>::read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length) {
-	std::memcpy(destinationBuffer, buffer_ + sourceBufferOffset, length);
+	std::memcpy(destinationBuffer, region_ + sourceBufferOffset, length);
 	return error::SUCCESS;
 }
 
 template <typename T>
 ErrorType LocalRegionContext<T>::write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length) {
-	std::memcpy(buffer_ + destinationBufferOffset, sourceBuffer, length);
+	std::memcpy(region_ + destinationBufferOffset, sourceBuffer, length);
 	return error::SUCCESS;
 }
 
 template <typename T>
 ErrorType LocalRegionContext<T>::CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset) {
-	std::atomic<T>* comparingObj = buffer_ + sourceBufferOffset;
+	std::atomic<T>* comparingObj = region_ + sourceBufferOffset;
 	if (atomic_compare_exchange_strong(comparingObj, expectedValue, desiredValue) == true)
 		return error::SUCCESS;
 	else

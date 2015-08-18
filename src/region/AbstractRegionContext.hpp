@@ -14,7 +14,6 @@
 #include "../base_types/PrimitiveTypes.hpp"
 #include <cstddef>	// for std::size_t
 #include <vector>
-#include <future>         // std::promise, std::future
 
 typedef error::ErrorType ErrorType;
 
@@ -26,10 +25,10 @@ public:
 	virtual ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length) = 0;
 	virtual ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset) = 0;
 	//virtual ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) = 0;
-
 	virtual ~AbstractRegionContext() = 0;
 };
 
+// NOTE: A pure virtual destructor needs an implementation.
 template <typename T>
 inline AbstractRegionContext<T>::~AbstractRegionContext() {
 	// empty

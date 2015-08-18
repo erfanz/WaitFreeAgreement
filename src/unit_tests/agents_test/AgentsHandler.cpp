@@ -11,39 +11,30 @@
 #include <algorithm>		// for find()
 
 
-std::vector<MemoryServer*> agents_handler::memoryServers;
-std::vector<Coordinator*> agents_handler::coordinators;
+std::vector<Coordinator*>	agents_handler::coordinators;
+std::vector<AtomicUpdate*>	agents_handler::atomicUpdates;
+MemoryRequestDispatcher		*agents_handler::dispatcher;
 
 std::map<size_t,uint64_t> agents_handler::bucketToPointerMap;	// stores where each bucket points to during the execution of the test.
 std::map<std::string,std::string> agents_handler::keyToValueMap;	// stores the value associated with any given key.
 std::map<std::string,size_t> agents_handler::keyToBucketMap;	// stores the bucketID associated with any given key.
 
-void agents_handler::createMemoryServers(std::vector<MemoryServer*> &memoryServers){
-	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++)
-		memoryServers.push_back(new MemoryServer());
-}
 
 void agents_handler::createCoordinators(std::vector<Coordinator*> &coordinators) {
+	std::shared_ptr<RequestBuffer> reqBufferPtr = dispatcher->getRequestBuffer();
 	for (primitive::coordinator_num_t i = 0; i < config::COORDINATOR_CNT; i++)
-		coordinators.push_back(new Coordinator (i));
+		coordinators.push_back(new Coordinator (i, reqBufferPtr));
 }
 
-void agents_handler::connectCoordsToMSs(std::vector<Coordinator*> &coordinators, const std::vector<MemoryServer*> &memoryServers) {
-	for (primitive::coordinator_num_t c = 0; c < config::COORDINATOR_CNT; c++) {
-		std::vector<MemoryServerContext> memoryServerCtxs;
-		for (size_t m = 0; m < config::MEMORY_SERVER_CNT; m++) {
-			MemoryServerContext* mscTmp = new MemoryServerContext (m, *memoryServers.at(m), true);
-			memoryServerCtxs.push_back(*mscTmp);
-		}
-		// assign to coordinators
-		coordinators.at(c)->connectToMemoryServers(memoryServerCtxs);
-	}
+void agents_handler::createAtomicUpdates(std::vector<AtomicUpdate*> &atomicUpdates) {
+	for (primitive::coordinator_num_t i = 0; i < config::COORDINATOR_CNT; i++)
+		atomicUpdates.push_back(new AtomicUpdate(coordinators[i]));
 }
 
 void agents_handler::setup() {
-	agents_handler::createMemoryServers(memoryServers);
+	dispatcher = new MemoryRequestDispatcher();
 	agents_handler::createCoordinators(coordinators);
-	agents_handler::connectCoordsToMSs(coordinators, memoryServers);
+	agents_handler::createAtomicUpdates(atomicUpdates);
 
 	// first initializing the map, so all the buckets are not pointing anywhere
 	for (size_t i = 0; i < config::HASH_SIZE; i++)
@@ -59,9 +50,8 @@ void agents_handler::setup() {
 	}
 }
 
-void agents_handler::resetMemoryServers() {
-	for (size_t i = 0; i < memoryServers.size(); i++)
-		memoryServers.at(i)->resetMemoryBuffers();
+void agents_handler::resetMemoryRegions() {
+	dispatcher->resetAllInstances();
 
 	for (size_t i = 0; i < config::HASH_SIZE; i++)
 		bucketToPointerMap[i] = 0ULL;
