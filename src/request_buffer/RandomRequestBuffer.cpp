@@ -9,9 +9,7 @@
 
 #include "RandomRequestBuffer.hpp"
 
-RandomRequestBuffer::RandomRequestBuffer() {
-	// TODO Auto-generated constructor stub
-}
+RandomRequestBuffer::RandomRequestBuffer() {}
 
 template<typename RandomGenerator>
 deq_it_t RandomRequestBuffer::select_randomly(deq_it_t start, deq_it_t end, RandomGenerator& g) {
@@ -46,6 +44,4 @@ req_ptr_t RandomRequestBuffer::remove() {
 	return randomElement;
 }
 
-RandomRequestBuffer::~RandomRequestBuffer() {
-	// TODO Auto-generated destructor stub
-}
+RandomRequestBuffer::~RandomRequestBuffer() {}

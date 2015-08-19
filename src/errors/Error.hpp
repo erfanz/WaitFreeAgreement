@@ -33,7 +33,8 @@ namespace error{
 		RESOLVE_FAILED,
 		SET_WITH_NO_GET,
 		GET_POINTER_CHANGED,
-		UNKNOWN_REQUEST_TYPE
+		UNKNOWN_REQUEST_TYPE,
+		ENTRY_DOES_NOT_EXIST
 	};
 //
 //	static std::map<int,std::string> createErrorCodeToStringMap ();

@@ -10,7 +10,6 @@
 #ifndef AGENTS_COORDINATOR_COORDINATOR_HPP_
 #define AGENTS_COORDINATOR_COORDINATOR_HPP_
 
-//#include "MemoryServerContext.hpp"
 #include "../../request_buffer/request/Request.hpp"
 #include "../../request_buffer/RequestBuffer.hpp"
 #include "../../base_types/LogEntry.hpp"
@@ -26,9 +25,7 @@
 #include <set>
 #include <map>
 
-
 typedef error::ErrorType ErrorType;
-
 
 class Coordinator : public error::Throwable{
 private:
@@ -36,15 +33,12 @@ private:
 	std::shared_ptr<RequestBuffer>		requestBuffer_;
 	primitive::generation_num_t			generationNum_;
 	primitive::offset_t					freeBufferOffset_;
-	// std::vector<MemoryServerContext>	memoryServerCtxs_;
 	size_t								localMSIndex_;
 
 	template <typename container> ErrorType readBucketHeadsFromAllReplicas(const container &readBuckets, std::vector<std::map<size_t, Pointer> > &bucketHeads);
 	ErrorType blockingReadEntry(const Pointer &pointer, LogEntry &entry);
-	//bool checkIfBlocks (const LogEntry &biggerEntry, const LogEntry &smallerEntry, const std::vector<std::map<size_t, Pointer> > &bucketHeads);
 	bool isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap) const;
 	ErrorType finishMakingSerialized(const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap);
-
 	ErrorType createNewPointer(const Change &change, Pointer **pointer);
 	ErrorType makeNewLogEntry(const Change &change, const Pointer &entryPointer, LogEntry **entry) const;
 	ErrorType propagateLogEntry(const LogEntry &entry);
@@ -56,15 +50,12 @@ public:
 	Coordinator(primitive::coordinator_num_t coordinatorID, std::shared_ptr<RequestBuffer> requestBuffer);
 	primitive::coordinator_num_t getID();
 
-	//ErrorType connectToMemoryServers(std::vector<MemoryServerContext> memoryServerCtxs);
 	ErrorType applyChange(const Change &change, const TID tID, LogEntry **newEntry);
 	ErrorType readLatest(const Key &key, Value &returnValue, LogEntry &headEntry);
 	//ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue);
 	ErrorType checkIfSerialized(const LogEntry &entry);
 	ErrorType resolve(const size_t bucketID, LogEntry &headEntry);
 	~Coordinator();
-
-
 };
 
 #endif /* AGENTS_COORDINATOR_COORDINATOR_HPP_ */

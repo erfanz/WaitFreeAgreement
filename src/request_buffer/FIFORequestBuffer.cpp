@@ -9,9 +9,7 @@
 
 #include "FIFORequestBuffer.hpp"
 
-FIFORequestBuffer::FIFORequestBuffer() {
-	// TODO Auto-generated constructor stub
-}
+FIFORequestBuffer::FIFORequestBuffer() {}
 
 void FIFORequestBuffer::add(req_ptr_t req) {
 	std::unique_lock<std::mutex> locker(mu_);
@@ -32,7 +30,5 @@ req_ptr_t FIFORequestBuffer::remove() {
 	return front;
 }
 
-FIFORequestBuffer::~FIFORequestBuffer() {
-	// TODO Auto-generated destructor stub
-}
+FIFORequestBuffer::~FIFORequestBuffer() {}
 

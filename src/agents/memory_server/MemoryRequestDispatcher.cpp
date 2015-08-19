@@ -24,7 +24,8 @@ typedef error::ErrorType ErrorType;
 MemoryRequestDispatcher::MemoryRequestDispatcher()
 : instances_(config::MEMORY_SERVER_CNT){
 	DEBUG_COUT (CLASS_NAME, __func__, "MemoryRequestDispatcher created!");
-	reqBufferPtr_.reset(new LIFORequestBuffer());
+	//reqBufferPtr_.reset(new LIFORequestBuffer());
+	reqBufferPtr_.reset(new RandomRequestBuffer());
 }
 
 std::shared_ptr<RequestBuffer> MemoryRequestDispatcher::getRequestBuffer(){
@@ -39,7 +40,7 @@ void MemoryRequestDispatcher::resetAllInstances() {
 void MemoryRequestDispatcher::run() {
 	ErrorType eType;
 	while (true) {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		//std::this_thread::sleep_for(std::chrono::seconds(1));
 		std::cout << "-----------------------------------------------------------" << std::endl;
 
 		std::shared_ptr<Request> req = reqBufferPtr_->remove();
@@ -128,8 +129,9 @@ ErrorType MemoryRequestDispatcher::handleReadEntryRequest(std::shared_ptr<EntryR
 	char readBuffer[paramPtr->length_];
 
 	eType = instances_.at(msNum).getLogRegion(cID)->read(readBuffer, paramPtr->remoteBufferOffset_, paramPtr->length_);
+
 	if (eType == error::SUCCESS) {
-		std::string tempStr(readBuffer);
+		std::string tempStr(readBuffer, paramPtr->length_);
 		std::istringstream is(tempStr);
 		LogEntry::deserialize(is, entry);
 		DEBUG_COUT(CLASS_NAME, __func__, "Log entry " << entry.getCurrentP().toHexString() << " read from log journal[" << (int)cID << "] from MS " << msNum);
@@ -154,10 +156,11 @@ ErrorType MemoryRequestDispatcher::handleWriteEntryRequest(std::shared_ptr<Entry
 	const char* cstr = tmp.c_str();
 
 	eType = instances_.at(msNum).getLogRegion(cID)->write(cstr, paramPtr->remoteBufferOffset_, paramPtr->length_);
+
 	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "Log Entry " << entry.getCurrentP().toHexString() << " written on log journal[" << (int)cID << "] from MS " << msNum);
+		DEBUG_COUT(CLASS_NAME, __func__, "Log Entry " << entry.getCurrentP().toHexString() << " written on log journal[" << (int)cID << "] on MS " << msNum);
 	else
-		DEBUG_COUT(CLASS_NAME, __func__, "Failure in writing log Entry " << entry.getCurrentP().toHexString() << " on log journal[" << (int)cID << "] from MS " << msNum);
+		DEBUG_COUT(CLASS_NAME, __func__, "Failure in writing log Entry " << entry.getCurrentP().toHexString() << " on log journal[" << (int)cID << "] on MS " << msNum);
 
 	return eType;
 }

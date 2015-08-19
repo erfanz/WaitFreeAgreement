@@ -38,13 +38,6 @@ Coordinator::~Coordinator() {
 	DEBUG_COUT(CLASS_NAME, __func__, "Coordinator " << (int)coordinatorID_ << " destroyed ");
 }
 
-// FIXME
-//ErrorType Coordinator::connectToMemoryServers(const std::vector<MemoryServerContext> memoryServerCtxs){
-//	this->memoryServerCtxs_ = memoryServerCtxs;
-//	DEBUG_COUT(CLASS_NAME, __func__, "Memory server contexts are all set for coordinator " << (int)coordinatorID_);
-//	return error::SUCCESS;
-//}
-
 ErrorType Coordinator::applyChange(const Change &change, const TID tID, LogEntry **newEntry){
 	DEBUG_COUT(CLASS_NAME, __func__, "Applying Change: " << change.toString() << " by coordinator " << (int)coordinatorID_);
 
@@ -80,7 +73,6 @@ ErrorType Coordinator::applyChange(const Change &change, const TID tID, LogEntry
 }
 
 ErrorType Coordinator::createNewPointer(const Change &change, Pointer **pointer) {
-
 	primitive::entry_size_t entrySize = LogEntry::calculateEntrySize(change.getDependencies(), change.getUpdates());
 	*pointer = new Pointer(coordinatorID_, generationNum_, entrySize, freeBufferOffset_);
 
@@ -105,7 +97,6 @@ ErrorType Coordinator::propagateLogEntry(const LogEntry &entry){
 
 	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++) {
 		errorFutures[i] = errorPromises[i].get_future();
-		// FIXME memoryServerCtxs_.at(i).writeLogEntry(coordinatorID_, entry, errorPromises[i]);
 
 		std::shared_ptr<Request> reqPtr (new EntryWriteRequest(
 					errorPromises[i],
@@ -128,37 +119,7 @@ ErrorType Coordinator::propagateLogEntry(const LogEntry &entry){
 			<< " propagated to all replicas by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
 }
-/*
-ErrorType Coordinator::publishChanges(LogEntry &entry){
-	std::vector<Dependency> dependencies = entry.getDependencies();
 
-	for (size_t i = 0; i < memoryServerCtxs_.size(); i++) {
-		std::vector<size_t> bucketIDs;
-		std::vector<Pointer> expectedHeads;
-		std::vector<Pointer> actualCurrentHeads;
-
-		for (size_t d = 0; d < dependencies.size(); d++){
-			ErrorType eType = memoryServerCtxs_.at(i).swapMultipleBucketHash(
-					bucketIDs,
-					expectedHeads,
-					entry.getCurrentP(),
-					actualCurrentHeads);
-
-			if (eType != error::SUCCESS) {
-				DEBUG_CERR(CLASS_NAME, __func__, "CAS failed for dependency ("
-						<< dependencies.at(d).toString() << ") on memory server context " << i );
-				return eType;
-			}
-
-		}
-		DEBUG_COUT(CLASS_NAME, __func__, "CAS " << dependencies.size() << " hash bucket(s) in memory server "
-				<< i << " by coordinator " << (int)coordinatorID_);
-	}
-
-	DEBUG_COUT(CLASS_NAME, __func__, "Published the change by coordinator " << (int)coordinatorID_);
-	return error::SUCCESS;
-}
-*/
 ErrorType Coordinator::publishChanges(const LogEntry &entry){
 	ErrorType eType;
 	std::vector<Dependency> dependencies = entry.getDependencies();
@@ -173,14 +134,6 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 		for (size_t d = 0; d < n; d++){
 			errorFutures[(i * n) + d] = errorPromises[(i * n) + d].get_future();
 
-			// FIXME
-//			memoryServerCtxs_.at(i).swapBucketHash(
-//					dependencies.at(d).getBucketID(),
-//					dependencies.at(d).getPointer(),
-//					entry.getCurrentP(),
-//					errorPromises[(i * n) + d],
-//					actualHeads[(i * n) + d]);
-
 			std::shared_ptr<Request> reqPtr (new CASRequest(
 					errorPromises[(i * n) + d],
 					i,
@@ -190,7 +143,6 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 					actualHeads[(i * n) + d] ) );
 
 			requestBuffer_->add(reqPtr);
-
 		}
 	}
 
@@ -218,8 +170,6 @@ ErrorType Coordinator::replicateState(const LogEntry &entry, const EntryState::S
 	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++) {
 		errorFutures[i ] = errorPromises[i].get_future();
 
-		// FIXME memoryServerCtxs_.at(i).markState(entry, state, errorPromises[i]);
-
 		std::shared_ptr<Request> reqPtr (new StateWriteRequest(
 				errorPromises[i],
 				i,
@@ -246,12 +196,10 @@ ErrorType Coordinator::replicateState(const LogEntry &entry, const EntryState::S
 
 ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &headEntry) {
 	DEBUG_COUT(CLASS_NAME, __func__, "Reading key " << key.getId() << " || coordinator " << (int)coordinatorID_);
-
 	HashMaker hashedKey(key.getId());
 	size_t bucketID = hashedKey.getHashed();
 	Pointer pointer;
 	ErrorType eType;
-
 
 	eType = resolve(bucketID, headEntry);
 	if (eType != error::SUCCESS) {
@@ -260,7 +208,6 @@ ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &
 	}
 
 	LogEntry &entry = headEntry;
-
 	while (true) {
 		DEBUG_COUT(CLASS_NAME, __func__, "Searching for key " << key.getId() << " in entry "
 				<< entry.getCurrentP().toHexString() << " || coordinator " << (int)coordinatorID_);
@@ -272,6 +219,8 @@ ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &
 			return error::SUCCESS;
 		}
 		else if (entry.getDependencyIfExists(hashedKey.getHashed(), pointer) == true) {
+			DEBUG_COUT (CLASS_NAME, __func__, "Dependency (" << hashedKey.getHashed() << ", "
+					<< pointer.toHexString() << ") found in log entry " << entry.getCurrentP().toHexString());
 			if ((eType = blockingReadEntry(pointer, entry)) != error::SUCCESS) {
 				DEBUG_COUT(CLASS_NAME, __func__, "Can't fetch entry " << pointer.toHexString() << " || coordinator " << (int)coordinatorID_);
 				return eType;
@@ -280,14 +229,14 @@ ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &
 		else {
 			DEBUG_COUT(CLASS_NAME, __func__, "Key " << key.getId() << " not found in bucket "
 					<< (int)bucketID << " || coordinator " << (int)coordinatorID_);
-			// FIXME: what should we do here.  return error::KEY_NOT_FOUND;
-			return eType;
+
+			return error::ENTRY_DOES_NOT_EXIST;
+			//return eType;
 		}
 	}
-
-	return error::KEY_NOT_FOUND;
+	// impossible to reach here, but required by the compiler
+	return error::ENTRY_DOES_NOT_EXIST;
 }
-
 
 ErrorType Coordinator::checkIfSerialized(const LogEntry &entry) {
 	// for optimization, we first check the local replica
@@ -299,15 +248,12 @@ ErrorType Coordinator::checkIfSerialized(const LogEntry &entry) {
 		DEBUG_COUT(CLASS_NAME, __func__, "Entry " << entry.getCurrentP().toHexString()
 				<< " is not locally marked serialized. Must consult other replicas || coordinator " << (int)coordinatorID_);
 
-
 		// Checking if any of the replicas is serialized (which makes the entry serialized)
 		EntryState::State state;
 		std::vector<std::promise<ErrorType> > flagErrorPromises(config::MEMORY_SERVER_CNT);
 		std::vector<std::future<ErrorType> > flagErrorFutures(config::MEMORY_SERVER_CNT);
 		for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++) {
 			flagErrorFutures[i] = flagErrorPromises[i].get_future();
-
-			// FIXME memoryServerCtxs_.at(i).checkState(entry, flagErrorPromises[i], state);
 
 			std::shared_ptr<Request> reqPtr (new StateReadRequest(
 					flagErrorPromises[i],
@@ -349,7 +295,6 @@ ErrorType Coordinator::checkIfSerialized(const LogEntry &entry) {
 			for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++) {
 				depErrorFutures[(i*n) + d] = depErrorPromises[(i*n) + d].get_future();
 
-				// memoryServerCtxs_.at(i).readBucketHash(bucketID, depErrorPromises[(i*n) + d], pointer[(i*n) + d]);
 				std::shared_ptr<Request> reqPtr (new BucketReadRequest(
 						depErrorPromises[(i*n) + d],
 						i,
@@ -401,7 +346,6 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 
 		DEBUG_COUT(CLASS_NAME, __func__, "Step 1: Reading the local head of bucket " << bucketID);
 
-		// FIXME memoryServerCtxs_.at(localMSIndex_).readBucketHash(bucketID, eProm, head);
 		std::shared_ptr<Request> reqPtr (new BucketReadRequest(
 				eProm,
 				localMSIndex_,
@@ -409,7 +353,6 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 				(primitive::offset_t)bucketID) );
 
 		requestBuffer_->add(reqPtr);
-
 
 		if ((eType = eFut.get()) != error::SUCCESS)
 			return eType;
@@ -421,8 +364,6 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 
 		if ((eType = blockingReadEntry(head, headEntry)) != error::SUCCESS)
 			return eType;
-
-
 
 		/**
 		 *
@@ -458,7 +399,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 		 */
 
 		/**
-		 *
+		 * First:
 		 * D_0 = U_{r in R} r.log[i]_0
 		 *
 		 */
@@ -491,9 +432,8 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 		}
 
 
-
 		/**
-		 *
+		 * Then:
 		 * do {
 		 *    D_i = U_{r in R, b in n.bdeps, n in D_[i-1]} r.log[b]_0
 		 * } while(D_i != D_i-1);
@@ -602,8 +542,6 @@ ErrorType Coordinator::readBucketHeadsFromAllReplicas(const container &readBucke
 			errorFutures[(r * n) + i] = errorPromises[(r * n) + i].get_future();
 			bucketID = *it;
 
-			 // FIXME memoryServerCtxs_.at(r).readBucketHash(bucketID, errorPromises[(r * n) + i],  bucketHeads[r][bucketID]);
-
 			std::shared_ptr<Request> reqPtr (new BucketReadRequest(
 					errorPromises[(r * n) + i],
 					r,
@@ -611,7 +549,6 @@ ErrorType Coordinator::readBucketHeadsFromAllReplicas(const container &readBucke
 					(primitive::offset_t)bucketID) );
 
 			requestBuffer_->add(reqPtr);
-
 			++i;
 		}
 	}
@@ -632,15 +569,22 @@ ErrorType Coordinator::readBucketHeadsFromAllReplicas(const container &readBucke
 }
 
 ErrorType Coordinator::blockingReadEntry(const Pointer &pointer, LogEntry &entry) {
+	DEBUG_COUT (CLASS_NAME, __func__, "Requesting the log entry for " << pointer.toHexString());
+
+	if (pointer.isNull()) {
+		DEBUG_COUT(CLASS_NAME, __func__, "Log Entry " << pointer.toHexString() << " is NULL.");
+		return error::ENTRY_DOES_NOT_EXIST;
+	}
+
+
 	std::promise<ErrorType> errorPromise;
 	std::future<ErrorType> errorFuture;
 	errorFuture = errorPromise.get_future();
 
-	// FIXME memoryServerCtxs_.at(localMSCtxIndex_).readLogEntry(pointer, errorPromise, entry);
 	std::shared_ptr<Request> reqPtr (new EntryReadRequest(
 				errorPromise,
 				localMSIndex_,
-				coordinatorID_,
+				pointer.getCoordinatorNum(),
 				entry,
 				pointer.getOffset(),
 				pointer.getLength() ) );
@@ -653,32 +597,6 @@ ErrorType Coordinator::blockingReadEntry(const Pointer &pointer, LogEntry &entry
 
 	return eType;
 }
-
-//bool Coordinator::checkIfBlocks (const LogEntry &biggerEntry, const LogEntry &smallerEntry, const std::vector<std::map<size_t, Pointer> > &bucketHeads) {
-//	Pointer p;
-//	std::set<size_t> readBuckets;
-//	ErrorType eType;
-//
-//	if (checkIfSerialized(smallerEntry) == error::SUCCESS)
-//		return false;
-//
-//	std::vector<Dependency>::const_iterator depIt;
-//	for (depIt = smallerEntry.getDependencies().begin(); depIt != smallerEntry.getDependencies().end(); depIt++) {
-//		// check if the blocking entry shares this dependency
-//		size_t bID = depIt->getBucketID();
-//		if (biggerEntry.getDependencyIfExists(bID, p) == true) {
-//			// Now we check whether in any of the replicas, the bigger entry is at the head of the bucket
-//			for (size_t r = 0; r < memoryServerCtxs_.size(); r++){
-//				if (biggerEntry.getCurrentP().isEqual(bucketHeads[r].at(bID) ) ) {
-//					DEBUG_COUT(CLASS_NAME, __func__, "Entry " << smallerEntry.getCurrentP().toHexString()
-//							<< " is blocked by entry " << biggerEntry.getCurrentP().toHexString());
-//					return true;
-//				}
-//			}
-//		}
-//	}
-//	return false;
-//}
 
 bool Coordinator::isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap) const{
 	// first check the flag
@@ -725,8 +643,6 @@ ErrorType Coordinator::finishMakingSerialized(const LogEntry &e, const std::vect
 
 			else if (oldHead.isEqual(dep.getPointer() ) ) {
 				// Valid CAS: Prepend
-				// FIXME memoryServerCtxs_.at(r).swapBucketHash(bID, oldHead, e.getCurrentP(), errorPromises[(r * n) + d], actualHeads[(r * n) + d]);
-
 				std::shared_ptr<Request> reqPtr (new CASRequest(
 						errorPromises[(r * n) + d],
 						r,
@@ -740,7 +656,6 @@ ErrorType Coordinator::finishMakingSerialized(const LogEntry &e, const std::vect
 
 			else if (e > entryHead && isFailed(entryHead, collectedBucketHeads, pointerToEntryMap) ) {
 				// Valid CAS: Replace
-				// FIXME memoryServerCtxs_.at(r).swapBucketHash(bID, oldHead, e.getCurrentP(), errorPromises[(r * n) + d], actualHeads[(r * n) + d]);
 				std::shared_ptr<Request> reqPtr (new CASRequest(
 						errorPromises[(r * n) + d],
 						r,
@@ -751,8 +666,6 @@ ErrorType Coordinator::finishMakingSerialized(const LogEntry &e, const std::vect
 
 				requestBuffer_->add(reqPtr);
 			}
-
-
 			else
 				// invalid CAS
 				return error::UNSERIALIZABLE;
@@ -769,7 +682,7 @@ ErrorType Coordinator::finishMakingSerialized(const LogEntry &e, const std::vect
 			}
 			else if (actualHeads[(r * n) + d].isEqual(e.getCurrentP()))
 				// Since we didn't do any CAS here
-				;
+				continue;
 			else
 				DEBUG_COUT(CLASS_NAME, __func__, "CAS " << n << " hash bucket(s) on memory server "
 						<< r << " by coordinator " << (int)coordinatorID_);

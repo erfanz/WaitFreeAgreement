@@ -30,8 +30,6 @@ public:
 
 // NOTE: A pure virtual destructor needs an implementation.
 template <typename T>
-inline AbstractRegionContext<T>::~AbstractRegionContext() {
-	// empty
-}
+inline AbstractRegionContext<T>::~AbstractRegionContext() {}
 
 #endif /* ABSTRACTREGIONCONTEXT_HPP_ */

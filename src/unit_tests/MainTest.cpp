@@ -27,11 +27,11 @@ void appendVector(std::vector<T> &mainVec, const std::vector<T> &toBeAppendedVec
 
 int main() {
 	std::vector<std::function<void()>> allTestFunctions;
-	appendVector(allTestFunctions, PointerTest::getFunctionList());
-	appendVector(allTestFunctions, KeyValueTest::getFunctionList());
-	appendVector(allTestFunctions, DependencyTest::getFunctionList());
-	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
-	appendVector(allTestFunctions, LocalRegionContextTest::getFunctionList());
+//	appendVector(allTestFunctions, PointerTest::getFunctionList());
+//	appendVector(allTestFunctions, KeyValueTest::getFunctionList());
+//	appendVector(allTestFunctions, DependencyTest::getFunctionList());
+//	appendVector(allTestFunctions, LogEntryTest::getFunctionList());
+//	appendVector(allTestFunctions, LocalRegionContextTest::getFunctionList());
 	//appendVector(allTestFunctions, SingleTreadedExecutionTest::getFunctionList());
 	//appendVector(allTestFunctions, CoordinatorTest::getFunctionList());
 	appendVector(allTestFunctions, CompleteTest::getFunctionList());

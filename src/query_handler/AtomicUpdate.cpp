@@ -17,6 +17,13 @@
 AtomicUpdate::AtomicUpdate(Coordinator *coordinator) {
 	DEBUG_COUT(CLASS_NAME, __func__, "Atomic Update with coordinator " << (int) coordinator->getID() << " created");
 	coordinator_ = coordinator;
+	newEntry = NULL;
+}
+
+void AtomicUpdate::reset() {
+	dependencyMap_.clear();
+	updates_.clear();
+	newEntry = NULL;
 }
 
 ErrorType AtomicUpdate::get(const Key &key, Value &value) {
@@ -29,7 +36,7 @@ ErrorType AtomicUpdate::get(const Key &key, Value &value) {
 
 	ErrorType eType = coordinator_->readLatest(key, value, headEntry);
 
-	if (eType == error::SUCCESS) {
+	if (eType == error::SUCCESS || eType == error::ENTRY_DOES_NOT_EXIST) {
 		// First, check if this bucket is already in the dependencies, but with a different value.
 		// If so, return an error
 		it = dependencyMap_.find(bucketID);

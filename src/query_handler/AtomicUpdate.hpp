@@ -31,6 +31,7 @@ private:
 
 public:
 	AtomicUpdate(Coordinator *coordinator);
+	void reset();
 	ErrorType	get(const Key &key, Value &value);
 	ErrorType	set(const Key &key, const Value &value);
 	ErrorType	serialize();

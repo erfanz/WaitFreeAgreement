@@ -30,7 +30,5 @@ req_ptr_t LIFORequestBuffer::remove() {
 	return back;
 }
 
-LIFORequestBuffer::~LIFORequestBuffer() {
-	// TODO Auto-generated destructor stub
-}
+LIFORequestBuffer::~LIFORequestBuffer() {}
 
