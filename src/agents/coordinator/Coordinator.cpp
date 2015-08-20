@@ -207,7 +207,7 @@ ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &
 		return eType;
 	}
 
-	LogEntry &entry = headEntry;
+	LogEntry entry = headEntry;
 	while (true) {
 		DEBUG_COUT(CLASS_NAME, __func__, "Searching for key " << key.getId() << " in entry "
 				<< entry.getCurrentP().toHexString() << " || coordinator " << (int)coordinatorID_);

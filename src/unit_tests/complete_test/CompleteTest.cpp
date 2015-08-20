@@ -15,6 +15,8 @@
 #include <stdlib.h>		// srand, rand
 #include <time.h>		// time
 #include <thread>		// std::thread
+#include <vector>
+#include <algorithm>	// std::random_shuffle
 
 #define CLASS_NAME	"CompleteTest"
 
@@ -31,67 +33,82 @@ std::vector<std::function<void()>>& CompleteTest::getFunctionList() {
 void CompleteTest::test_all() {
 	TestBase::printMessage(CLASS_NAME, __func__);
 	ErrorType eType;
+	Value v;
 	agents_handler::setup();
 	srand ((unsigned int)time(NULL));
 
+	std::vector<Key> allKeys;
+
+	for (size_t i = 0; i < config::KEY_CNT; i++)
+		allKeys.push_back(Key ("k" + utilities::ToString<size_t>(i)));
+
 	std::thread dispatcherThread (&MemoryRequestDispatcher::run, std::ref(*agents_handler::dispatcher));     // spawn new thread that calls foo()
 
-	agents_handler::atomicUpdates.at(1)->reset();
-	Key k1("k1");
-	Value v1;
-	eType = agents_handler::atomicUpdates.at(1)->get(k1, v1);
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "get Value[" << k1.getId() << "] = " << v1.getContent());
-	else if (eType == error::ENTRY_DOES_NOT_EXIST)
-			DEBUG_COUT(CLASS_NAME, __func__, "No value for key " << k1.getId());
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k1.getId() << "]");
+	for (size_t i = 0; i < 50; i++) {
+		primitive::coordinator_num_t cID = (primitive::coordinator_num_t) rand() % config::COORDINATOR_CNT;
 
-	v1.setContent("v1");
-	eType = agents_handler::atomicUpdates.at(1)->set(k1, v1);
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "set Value[" << k1.getId() << "] = " << v1.getContent());
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k1.getId() << "]");
+		size_t updatesCnt = (rand() % 1) + 1;
+		size_t depCnt = (rand() % 2) + 1;
 
-	eType = agents_handler::atomicUpdates.at(1)->serialize();
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "serialized successfully");
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in serialization");
+		std::vector<Key> keys = allKeys;
+		std::random_shuffle(keys.begin(), keys.end());
 
-	std::cout << "**************************************" << std::endl;
+		std::vector<Key>::const_iterator first = keys.begin();
+		std::vector<Key>::const_iterator last = keys.begin() + updatesCnt;
+		std::vector<Key> updatesKeys(first, last);
 
+		std::vector<Key>::const_iterator first2 = keys.begin() + updatesCnt;
+		std::vector<Key>::const_iterator last2 = keys.begin() + updatesCnt + depCnt;
+		std::vector<Key> dependencyKeys(first2, last2);
 
-	agents_handler::atomicUpdates.at(0)->reset();
-	Key k2("k2");
-	Value v2;
-	eType = agents_handler::atomicUpdates.at(0)->get(k1, v1);
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "get Value[" << k1.getId() << "] = " << v1.getContent());
-	else if (eType == error::ENTRY_DOES_NOT_EXIST)
-		DEBUG_COUT(CLASS_NAME, __func__, "No value for key " << k1.getId());
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k1.getId() << "]");
+		dependencyKeys.insert(dependencyKeys.end(), updatesKeys.begin(), updatesKeys.end());
 
-	eType = agents_handler::atomicUpdates.at(0)->get(k2, v2);
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "get Value[" << k2.getId() << "] = " << v2.getContent());
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k2.getId() << "]");
+		std::string concatValue = "";
 
-	v2.setContent("v2");
-	eType = agents_handler::atomicUpdates.at(0)->set(k2, v2);
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "set Value[" << k2.getId() << "] = " << v2.getContent());
-	else if (eType == error::ENTRY_DOES_NOT_EXIST)
-		DEBUG_COUT(CLASS_NAME, __func__, "No value for key " << k1.getId());
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k2.getId() << "]");
+		std::cout << "Starting Atomic Change: "  << "get (";
+		for (size_t i = 0; i < dependencyKeys.size(); i++)
+			std::cout << dependencyKeys.at(i).getId() << ", ";
+		std::cout << ")   set (";
+		for (size_t i = 0; i < updatesKeys.size(); i++)
+			std::cout << updatesKeys.at(i).getId() << ", ";
+		std::cout << ")" << std::endl;
 
-	eType = agents_handler::atomicUpdates.at(0)->serialize();
-	if (eType == error::SUCCESS)
-		DEBUG_COUT(CLASS_NAME, __func__, "serialized successfully");
-	else
-		DEBUG_CERR(CLASS_NAME, __func__, "Error in serialization");
+		// Reset the AtomicUpcate object
+		agents_handler::atomicUpdates.at(cID)->reset();
+
+		// Get the dependencies
+		for (size_t i = 0; i < dependencyKeys.size(); i++){
+			std::cout << "-----------------------------------------------------------" << std::endl;
+			const Key &k = dependencyKeys.at(i);
+			eType = agents_handler::atomicUpdates.at(cID)->get(k, v);
+
+			if (eType == error::SUCCESS) {
+				concatValue += v.getContent() + "";
+				DEBUG_COUT(CLASS_NAME, __func__, "get Value[" << k.getId() << "] = " << v.getContent());
+			}
+			else if (eType == error::ENTRY_DOES_NOT_EXIST)
+				DEBUG_COUT(CLASS_NAME, __func__, "No value for key " << k.getId());
+			else
+				DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k.getId() << "]");
+		}
+
+		// Set the updates
+		for (size_t i = 0; i < updatesKeys.size(); i++){
+			std::cout << "-----------------------------------------------------------" << std::endl;
+			const Key &k = updatesKeys.at(i);
+			eType = agents_handler::atomicUpdates.at(cID)->set(k, agents_handler::keyToValueMap[k.getId()] + "" + concatValue);
+			if (eType == error::SUCCESS)
+				DEBUG_COUT(CLASS_NAME, __func__, "set Value[" << k.getId() << "] = " << concatValue);
+			else
+				DEBUG_CERR(CLASS_NAME, __func__, "Error in Value[" << k.getId() << "]. Error Code: " << eType);
+		}
+
+		std::cout << "-----------------------------------------------------------" << std::endl;
+		// Serialize
+		eType = agents_handler::atomicUpdates.at(cID)->serialize();
+		if (eType == error::SUCCESS)
+			DEBUG_COUT(CLASS_NAME, __func__, "serialized successfully");
+		else
+			DEBUG_CERR(CLASS_NAME, __func__, "Error in serialization");
+	}
 }
