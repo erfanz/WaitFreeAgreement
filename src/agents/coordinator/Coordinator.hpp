@@ -15,7 +15,6 @@
 #include "../../base_types/LogEntry.hpp"
 #include "../../base_types/EntryState.hpp"
 #include "../../base_types/KeyValue.hpp"
-#include "../../base_types/Change.hpp"
 #include "../../base_types/PrimitiveTypes.hpp"	// primitive::SOME_TYPE
 #include "../../errors/Error.hpp"		// to return error from functions
 #include "../../base_types/TID.hpp"
@@ -39,18 +38,20 @@ private:
 	ErrorType blockingReadEntry(const Pointer &pointer, LogEntry &entry);
 	bool isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap) const;
 	ErrorType finishMakingSerialized(const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap);
-	ErrorType createNewPointer(const Change &change, Pointer **pointer);
-	ErrorType makeNewLogEntry(const Change &change, const Pointer &entryPointer, LogEntry **entry) const;
+	ErrorType createNewPointer(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, Pointer **pointer);
+	ErrorType makeNewLogEntry(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, const Pointer &entryPointer, LogEntry **entry) const;
 	ErrorType propagateLogEntry(const LogEntry &entry);
 	ErrorType publishChanges(const LogEntry &entry);
 	ErrorType replicateState(const LogEntry &entry, const EntryState::State state);
+	static std::string printChange(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates);
+
 
 public:
 	friend class CoordinatorTest;	// since we want to test even private member methods of Coordinator in our unit tests
 	Coordinator(primitive::coordinator_num_t coordinatorID, std::shared_ptr<RequestBuffer> requestBuffer);
 	primitive::coordinator_num_t getID();
 
-	ErrorType applyChange(const Change &change, const TID tID, LogEntry **newEntry);
+	ErrorType applyChange(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, const TID tID, LogEntry **newEntry);
 	ErrorType readLatest(const Key &key, Value &returnValue, LogEntry &headEntry);
 	//ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue);
 	ErrorType checkIfSerialized(const LogEntry &entry);

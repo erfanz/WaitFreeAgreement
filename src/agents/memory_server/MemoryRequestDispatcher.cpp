@@ -19,6 +19,8 @@
 
 #define CLASS_NAME	"MSDispatcher"
 
+#include <string>
+
 typedef error::ErrorType ErrorType;
 
 MemoryRequestDispatcher::MemoryRequestDispatcher()
@@ -43,6 +45,8 @@ void MemoryRequestDispatcher::run() {
 		//std::this_thread::sleep_for(std::chrono::seconds(1));
 
 		std::shared_ptr<Request> req = reqBufferPtr_->remove();
+		//std::string s = "run: ms=" + utilities::ToString<int>(req->getMemoryServerNumber());
+		//std::cout << s << std::endl;
 
 		if (req->getRequestType() == Request::RequestType::CAS) {
 			DEBUG_COUT(CLASS_NAME, __func__, "Received CAS request");
@@ -105,6 +109,9 @@ ErrorType MemoryRequestDispatcher::handleCASRequest(std::shared_ptr<CASRequest> 
 	primitive::pointer_size_t	expected	= paramPtr->expectedHead_.toULL();
 	primitive::pointer_size_t	desired		= paramPtr->desiredHead_.toULL();
 	size_t bucketID = paramPtr->offset_;
+
+	//std::string s = "inside Dispatcher: ms, bucket = (" + utilities::ToString<int>(msNum) + "-" + utilities::ToString<int>(bucketID);
+	//std::cout << s << std::endl;
 
 	eType = instances_.at(msNum).getHashRegion()->CAS(&expected, desired, paramPtr->offset_);
 

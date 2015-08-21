@@ -1,5 +1,5 @@
 /*
- *  AtomicUpdate.cpp
+ *  Change.cpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Jul 9, 2015
@@ -7,26 +7,50 @@
  *
  */
 
-#include "AtomicUpdate.hpp"
+#include "Change.hpp"
 #include "../base_types/HashMaker.hpp"
 #include "../base_types/TID.hpp"
 
-#define CLASS_NAME	"AtomicUpdate"
+#define CLASS_NAME	"Change"
 
 
-AtomicUpdate::AtomicUpdate(Coordinator *coordinator) {
-	DEBUG_COUT(CLASS_NAME, __func__, "Atomic Update with coordinator " << (int) coordinator->getID() << " created");
+/**
+ * Creates a new Change
+ *
+ * Input:
+ * 	- Coordinator *coordinator: the coordinator with which this change is associated with.
+ * 		This means that all the get(), set() and serialize() calls will be performed by that coordinator
+ */
+Change::Change(Coordinator *coordinator) {
+	DEBUG_COUT(CLASS_NAME, __func__, "Change created by coordinator " << (int) coordinator->getID());
 	coordinator_ = coordinator;
 	newEntry = NULL;
 }
 
-void AtomicUpdate::reset() {
+
+/**
+ * Resets the change, so that new get() and set() can be called.
+ *
+ * Returns:
+ * 	- nothing
+ */
+void Change::reset() {
 	dependencyMap_.clear();
 	updates_.clear();
 	newEntry = NULL;
 }
 
-ErrorType AtomicUpdate::get(const Key &key, Value &value) {
+
+/**
+ * Gets current value, and adds a dependency on current value
+ *
+ * Input:
+ * 	- const Key &key:	the key for which the value is asked.
+ * 	- value &value:		the returned value
+ * Returns:
+ * 	- the type of the error
+ */
+ErrorType Change::get(const Key &key, Value &value) {
 	DEBUG_COUT(CLASS_NAME, __func__, "getting value for key " << key.getId());
 
 	LogEntry headEntry;
@@ -52,7 +76,17 @@ ErrorType AtomicUpdate::get(const Key &key, Value &value) {
 	return eType;
 }
 
-ErrorType AtomicUpdate::set(const Key &key, const Value &value) {
+
+/**
+ * Appends a new kv to the change.
+ *
+ * Input:
+ * 	- const Key &key:		the key to be appended.
+ * 	- const Value &value:	the associated value to be appended.
+ * Returns:
+ * 	- the type of the error
+ */
+ErrorType Change::set(const Key &key, const Value &value) {
 	DEBUG_COUT(CLASS_NAME, __func__, "setting value[" << key.getId() << "] = " << value.getContent());
 
 	KeyValue kv(key, value);
@@ -66,7 +100,15 @@ ErrorType AtomicUpdate::set(const Key &key, const Value &value) {
 	return error::SUCCESS;
 }
 
-ErrorType AtomicUpdate::serialize() {
+
+/**
+ * Returns when the change is serialized to the log, which succeeds only if no new
+ * changes to any dependencies have serialized. Returns the serialization time.
+ *
+ * Returns:
+ * 	- the type of the error
+ */
+ErrorType Change::serialize() {
 	DEBUG_COUT(CLASS_NAME, __func__, "serializing the change");
 
 	TID tid;
@@ -81,9 +123,8 @@ ErrorType AtomicUpdate::serialize() {
 		deps.push_back(d);
 	}
 
-	// Construct the change
-	Change change(updates_, deps);
-	eType = coordinator_->applyChange(change, tid, &newEntry);
+	// Applying the change
+	eType = coordinator_->applyChange(deps, updates_, tid, &newEntry);
 
 	if (eType == error::SUCCESS)
 		return error::SUCCESS;
@@ -93,7 +134,7 @@ ErrorType AtomicUpdate::serialize() {
 		// Therefore, resolve must be called on any of the change dependencies (doesn't matter which one), to make sure that the entry is serialized or failed
 
 		LogEntry resolvedEntry;
-		size_t sampleBucketDependency = change.getDependencies()[0].getBucketID();
+		size_t sampleBucketDependency = deps[0].getBucketID();
 		eType = coordinator_->resolve(sampleBucketDependency, resolvedEntry);
 		if (eType != error::SUCCESS)
 			return eType;
@@ -102,7 +143,11 @@ ErrorType AtomicUpdate::serialize() {
 	}
 }
 
-AtomicUpdate::~AtomicUpdate() {
+
+/**
+ * Destroys the change and cleans up its memory.
+ */
+Change::~Change() {
 	delete newEntry;	// which was allocated in Coordinator class
-	DEBUG_COUT(CLASS_NAME, __func__, "Atomic Update destroyed!");
+	DEBUG_COUT(CLASS_NAME, __func__, "Change destroyed!");
 }

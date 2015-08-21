@@ -49,10 +49,10 @@ public:
 	void setToNull();
 
 private:
-	std::vector<Dependency> dependencies_;
-	std::vector<KeyValue> updates_;
-	Pointer currentP_;
-	EntryState::State state_;
+	std::vector<Dependency> dependencies_;	// the list of dependencies for the log entry
+	std::vector<KeyValue> updates_;			// the list of kv updates for the log entry
+	Pointer currentP_;						// the Saturn Pointer of this log entry (self pointer)
+	EntryState::State state_;				// the mutable state of the entry (starts off UNKNOWN and changes to either SERIALIZED or FAILED)
 };
 
 #endif /* LOGENTRY_HPP_ */

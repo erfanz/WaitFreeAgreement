@@ -18,15 +18,14 @@
 namespace config {
 	#define DEBUG_ENABLED (true)
 
-
 	static const int	MEMORY_SERVER_CNT	= 2;
 	static const int	COORDINATOR_CNT 	= 2;
 
-	static const int	OPERATION_CNT 		= 100;
+	static const int	OPERATION_CNT 		= 10;
 
-	static const int	KEY_CNT			= 10;		// Number of Items
+	static const int	KEY_CNT				= 10;		// Number of Items
 	static const int	LOG_JOURNAL_SIZE	= 200000;			// in bytes
-	static const int	HASH_SIZE			= 1;
+	static const int	HASH_SIZE			= 2;
 
 	static const int	TIMEOUT_IN_MS		= 500;		/* ms */
 }

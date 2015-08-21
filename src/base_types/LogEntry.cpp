@@ -16,10 +16,20 @@
 
 #define CLASS_NAME	"LogEntry"
 
+
 LogEntry::LogEntry() {
 	;
 }
 
+/**
+ * Creates a new log entry
+ *
+ * Input:
+ * 	- const vector<Dependency> &:	the list of all the dependencies for the log entry
+ * 	- const vector<KeyValue> &:		the list of all the new kv updates
+ * 	- const Pointer &:				the Saturn Pointer of the log entry (self pointer)
+ * 	- const EntryState:state &:		the initial mutable state of the log entry (should be UNKNOWN)
+ */
 LogEntry::LogEntry(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates, const Pointer &currentP, const EntryState::State &state) {
 	this->dependencies_ = dependencies;
 	this->updates_ = updates;
@@ -27,15 +37,44 @@ LogEntry::LogEntry(const std::vector<Dependency> &dependencies, const std::vecto
 	this->state_ = state;
 }
 
+
+/**
+ * Overloaded "less than" operator, used for total ordering between two log entries.
+ *
+ * Input:
+ * 	- const LogEntry &:	the log entry to be compared with.
+ *
+ * Returns:
+ * 	- true if the current entry is smaller than the input entry. Otherwise false.
+ */
 bool LogEntry::operator< (const LogEntry &right) const {
 	return currentP_ < right.getCurrentP();
 }
 
+/**
+ * Overloaded "greater than" operator, used for total ordering between two log entries.
+ *
+ * Input:
+ * 	- const LogEntry &:	the log entry to be compared with.
+ *
+ * Returns:
+ * 	- true if the current entry is bigger than the input entry. Otherwise false.
+ */
 bool LogEntry::operator>(const LogEntry &right) const {
 	// TODO: this should be changed
 	return currentP_ > right.getCurrentP();
 }
 
+
+/**
+ * Checks if the current entry is the same as the input entry
+ *
+ * Input:
+ * 	- const LogEntry &:	the log entry to be compared with.
+ *
+ * Returns:
+ * 	- true if the current entry is the same as the input entry. Otherwise false.
+ */
 bool LogEntry::isEqual(const LogEntry &entry) const {
 	if (! currentP_.isEqual(entry.getCurrentP())
 			|| state_ != entry.getState()
@@ -56,6 +95,15 @@ bool LogEntry::isEqual(const LogEntry &entry) const {
 }
 
 
+/**
+ * Serializes the log entry object as an output stream of characters
+ *
+ * Input:
+ * 	- std::ostream&:	the output stream to which the serialization will be written.
+ *
+ * Returns:
+ * 	- nothing
+ */
 void LogEntry::serialize(std::ostream& stream) const{
 	/*
 	 * - (a) Pointer to the current log entry
@@ -104,6 +152,17 @@ void LogEntry::setState(EntryState::State state) {
 	this->state_ = state;
 }
 
+
+/**
+ * Deserializes the input stream of characters to a log entry
+ *
+ * Input:
+ * 	- std::istream&:	the input stream from which the deserialization will be done.
+ * 	- LogEntry &:		the resulted log entry
+ *
+ * Returns:
+ * 	- nothing
+ */
 void LogEntry::doDeserialize(std::istream& stream, LogEntry &entry){
 	std::string pointer_start, pointer_end;
 	int dependencyCnt, updateCnt;
@@ -175,6 +234,18 @@ const Pointer LogEntry::getCurrentP() const {
 	return currentP_;
 }
 
+
+/**
+ * Calculates the size of the serialized log entry which will be created using the input dependencies and updates in bytes.
+ * This method is used to create the self pointer (which contains the entry size) of log entries even before they are constructed.
+ *
+ * Input:
+ * 	- const vector<Dependency> &:	the list of dependencies of the log entry
+ * 	- const vector<KeyValue> &:		the list of kv updates
+ *
+ * Returns:
+ * 	- the size of the serialized entry
+ */
 primitive::entry_size_t LogEntry::calculateEntrySize(const std::vector<Dependency> &dependencies, const std::vector<KeyValue> &updates) {
 	size_t size = 0;
 	size +=  Pointer::getTotalSize() + 1;								// for (a) Pointer to the current log entry, and the space after

@@ -1,5 +1,5 @@
 /*
- *  AtomicUpdate.hpp
+ *  Change.hpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Jul 9, 2015
@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef ATOMICUPDATE_HPP_
-#define ATOMICUPDATE_HPP_
+#ifndef CHANGE_HPP_
+#define CHANGE_HPP_
 
 #include "../agents/coordinator/Coordinator.hpp"
 #include "../base_types/Dependency.hpp"
@@ -21,21 +21,20 @@
 
 typedef error::ErrorType ErrorType;
 
-class AtomicUpdate {
+class Change {
 private:
-	Coordinator* coordinator_;
-	std::map<size_t, Pointer> dependencyMap_;
-	std::vector<KeyValue> updates_;
-	LogEntry *newEntry;
-
+	Coordinator* coordinator_;					// the requested coordinator to be associated with the Change.
+	std::map<size_t, Pointer> dependencyMap_;	// the map from bucketIDs to their associated Pointer at the time of get()
+	std::vector<KeyValue> updates_;				// the list of all key-value updates, specified by set()
+	LogEntry *newEntry;							// the log entry to be constructed with the new updates and dependencies.
 
 public:
-	AtomicUpdate(Coordinator *coordinator);
+	Change(Coordinator *coordinator);
 	void reset();
 	ErrorType	get(const Key &key, Value &value);
 	ErrorType	set(const Key &key, const Value &value);
 	ErrorType	serialize();
-	~AtomicUpdate();
+	~Change();
 };
 
-#endif /* ATOMICUPDATE_HPP_ */
+#endif /* CHANGE_HPP_ */

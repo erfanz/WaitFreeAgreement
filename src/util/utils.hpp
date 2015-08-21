@@ -19,8 +19,6 @@
 #include "../config.hpp"
 
 
-
-
 namespace utilities {
 	#if(DEBUG_ENABLED)
 	#define DEBUG_COUT(className,funcName,message) do { \

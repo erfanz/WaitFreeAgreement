@@ -15,6 +15,7 @@
 #include <stdlib.h>		// srand, rand
 #include <time.h>		// time
 #include <thread>		// std::thread
+#include <chrono>         // std::chrono::seconds
 #include <vector>
 #include <algorithm>	// std::random_shuffle
 
@@ -65,7 +66,7 @@ void CompleteTest::test_all() {
 
 		std::string concatValue = "";
 
-		std::cout << "Starting Atomic Change: "  << "get (";
+		std::cout << "Starting Change: "  << "get (";
 		for (size_t i = 0; i < dependencyKeys.size(); i++)
 			std::cout << dependencyKeys.at(i).getId() << ", ";
 		std::cout << ")   set (";
@@ -74,16 +75,16 @@ void CompleteTest::test_all() {
 		std::cout << ")" << std::endl;
 
 		// Reset the AtomicUpcate object
-		agents_handler::atomicUpdates.at(cID)->reset();
+		agents_handler::changes.at(cID)->reset();
 
 		// Get the dependencies
 		for (size_t i = 0; i < dependencyKeys.size(); i++){
 			std::cout << "-----------------------------------------------------------" << std::endl;
 			const Key &k = dependencyKeys.at(i);
-			eType = agents_handler::atomicUpdates.at(cID)->get(k, v);
+			eType = agents_handler::changes.at(cID)->get(k, v);
 
 			if (eType == error::SUCCESS) {
-				concatValue += v.getContent() + "";
+				concatValue += v.getContent();
 				DEBUG_COUT(CLASS_NAME, __func__, "get Value[" << k.getId() << "] = " << v.getContent());
 			}
 			else if (eType == error::ENTRY_DOES_NOT_EXIST)
@@ -96,7 +97,7 @@ void CompleteTest::test_all() {
 		for (size_t i = 0; i < updatesKeys.size(); i++){
 			std::cout << "-----------------------------------------------------------" << std::endl;
 			const Key &k = updatesKeys.at(i);
-			eType = agents_handler::atomicUpdates.at(cID)->set(k, agents_handler::keyToValueMap[k.getId()] + "" + concatValue);
+			eType = agents_handler::changes.at(cID)->set(k, agents_handler::keyToValueMap[k.getId()] + concatValue.substr(0, 10));
 			if (eType == error::SUCCESS)
 				DEBUG_COUT(CLASS_NAME, __func__, "set Value[" << k.getId() << "] = " << concatValue);
 			else
@@ -105,10 +106,10 @@ void CompleteTest::test_all() {
 
 		std::cout << "-----------------------------------------------------------" << std::endl;
 		// Serialize
-		eType = agents_handler::atomicUpdates.at(cID)->serialize();
+		eType = agents_handler::changes.at(cID)->serialize();
 		if (eType == error::SUCCESS)
 			DEBUG_COUT(CLASS_NAME, __func__, "serialized successfully");
 		else
-			DEBUG_CERR(CLASS_NAME, __func__, "Error in serialization");
+			DEBUG_COUT(CLASS_NAME, __func__, "Error in serialization. Error Code: " << eType);
 	}
 }

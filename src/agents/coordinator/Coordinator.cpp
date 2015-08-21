@@ -16,6 +16,7 @@
 #include "../../request_buffer/request/StateReadRequest.hpp"
 #include "../../request_buffer/request/StateWriteRequest.hpp"
 #include <future>         // std::promise, std::future
+#include <unistd.h>
 
 
 #define CLASS_NAME	"Coord"
@@ -38,12 +39,12 @@ Coordinator::~Coordinator() {
 	DEBUG_COUT(CLASS_NAME, __func__, "Coordinator " << (int)coordinatorID_ << " destroyed ");
 }
 
-ErrorType Coordinator::applyChange(const Change &change, const TID tID, LogEntry **newEntry){
-	DEBUG_COUT(CLASS_NAME, __func__, "Applying Change: " << change.toString() << " by coordinator " << (int)coordinatorID_);
+ErrorType Coordinator::applyChange(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, const TID tID, LogEntry **newEntry){
+	DEBUG_COUT(CLASS_NAME, __func__, "Applying Change: " << printChange(deps, updates) << " by coordinator " << (int)coordinatorID_);
 
 	ErrorType eType;
 
-	if (change.getUpdates().size() == 0) {
+	if (updates.size() == 0) {
 		DEBUG_COUT(CLASS_NAME, __func__, "Change does not contain any update");
 		return error::NO_UPDATE_KEY_IN_CHANGE;
 	}
@@ -52,10 +53,10 @@ ErrorType Coordinator::applyChange(const Change &change, const TID tID, LogEntry
 
 	Pointer *entryPointer = NULL;
 
-	if ((eType = createNewPointer(change, &entryPointer)) != error::SUCCESS)
+	if ((eType = createNewPointer(deps, updates, &entryPointer)) != error::SUCCESS)
 		return eType;
 
-	if ((eType = makeNewLogEntry(change, *entryPointer, newEntry ) ) != error::SUCCESS)
+	if ((eType = makeNewLogEntry(deps, updates, *entryPointer, newEntry ) ) != error::SUCCESS)
 		return eType;
 
 	if ((eType = propagateLogEntry(**newEntry)) != error::SUCCESS)
@@ -72,8 +73,8 @@ ErrorType Coordinator::applyChange(const Change &change, const TID tID, LogEntry
 	}
 }
 
-ErrorType Coordinator::createNewPointer(const Change &change, Pointer **pointer) {
-	primitive::entry_size_t entrySize = LogEntry::calculateEntrySize(change.getDependencies(), change.getUpdates());
+ErrorType Coordinator::createNewPointer(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, Pointer **pointer) {
+	primitive::entry_size_t entrySize = LogEntry::calculateEntrySize(deps, updates);
 	*pointer = new Pointer(coordinatorID_, generationNum_, entrySize, freeBufferOffset_);
 
 	freeBufferOffset_ += entrySize;	// moving forward the free buffer head
@@ -83,8 +84,8 @@ ErrorType Coordinator::createNewPointer(const Change &change, Pointer **pointer)
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::makeNewLogEntry(const Change &change, const Pointer &entryPointer, LogEntry **entry __attribute__((unused))) const{
-	*entry = new LogEntry(change.getDependencies(), change.getUpdates(), entryPointer, EntryState::UNKNOWN);
+ErrorType Coordinator::makeNewLogEntry(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, const Pointer &entryPointer, LogEntry **entry __attribute__((unused))) const{
+	*entry = new LogEntry(deps, updates, entryPointer, EntryState::UNKNOWN);
 	DEBUG_COUT(CLASS_NAME, __func__, "Log entry created with pointer = "
 			<< (*entry)->getCurrentP().toHexString() << " by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
@@ -134,6 +135,9 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 		for (size_t d = 0; d < n; d++){
 			errorFutures[(i * n) + d] = errorPromises[(i * n) + d].get_future();
 
+			// std::string s = "ms, bucket: ( " + utilities::ToString<int>(i) + "," + utilities::ToString<int>(dependencies.at(d).getBucketID()) + ") expected: " + dependencies.at(d).getPointer().toHexString();
+			// std::cout << s << std::endl;
+
 			std::shared_ptr<Request> reqPtr (new CASRequest(
 					errorPromises[(i * n) + d],
 					i,
@@ -143,6 +147,7 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 					actualHeads[(i * n) + d] ) );
 
 			requestBuffer_->add(reqPtr);
+			usleep(1);
 		}
 	}
 
@@ -154,9 +159,10 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 						<< dependencies.at(d).getBucketID() << " (" << dependencies.at(d).getPointer().toHexString() << ") on memory server context "<< i);
 				return eType;
 			}
-			DEBUG_COUT(CLASS_NAME, __func__, "CAS " << dependencies.size() << " hash bucket(s) in memory server "
-					<< i << " by coordinator " << (int)coordinatorID_);
 		}
+		DEBUG_COUT(CLASS_NAME, __func__, "CAS " << n << " hash bucket(s) on memory server "
+				<< i << " by coordinator " << (int)coordinatorID_);
+
 	}
 	DEBUG_COUT(CLASS_NAME, __func__, "Published the change by coordinator " << (int)coordinatorID_);
 	return error::SUCCESS;
@@ -737,3 +743,21 @@ ErrorType Coordinator::finishMakingSerialized(const LogEntry &e, const std::vect
 //	returnValue = v;
 //	return error::SUCCESS;
 //}
+
+std::string Coordinator::printChange(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates) {
+	std::string str = "";
+	str += "Updates: \"";
+	for (size_t i = 0; i < updates.size(); i++){
+		str += updates.at(i).toString();
+		str += ", ";
+	}
+
+	str += "\", Dependencies: \"";
+
+	for (size_t i = 0; i < deps.size(); i++){
+		str += utilities::ToString<size_t>(deps.at(i).getBucketID()) + "(" + deps.at(i).getPointer().toHexString() + ")";
+		str += ", ";
+	}
+	str += "\"";
+	return str;
+}

@@ -4,10 +4,15 @@ LD = g++
 CPPFLAGS = -std=gnu++14 -g -Wall -Wconversion -Wextra -Wno-ignored-qualifiers -DGTEST_OS_CYGWIN=1
 BUILDDIR = build/widgets
 
+# all the test modules (including subfloders) should go here
 TEST_MODULES	:= unit_tests unit_tests/base_types_test unit_tests/region_test unit_tests/execution_test unit_tests/agents_test unit_tests/complete_test
+
+# all the agents (including subfolders) should go here
 AGENTS_MODULES	:= agents/coordinator agents/memory_server 
 
-MODULES		:= base_types agents util errors region  $(AGENTS_MODULES) query_handler request_buffer request_buffer/request	$(TEST_MODULES)# uncomment this line for unit testing
+# the rest of the modules should go here.
+MODULES		:= base_types agents util errors region  $(AGENTS_MODULES) change_handler request_buffer request_buffer/request	$(TEST_MODULES)
+
 SRC_DIR		:= $(addprefix src/,$(MODULES))
 BUILD_DIR	:= $(addprefix build/,$(MODULES))
 EXE_DIR		:= exe

@@ -12,7 +12,7 @@
 
 
 std::vector<Coordinator*>	agents_handler::coordinators;
-std::vector<AtomicUpdate*>	agents_handler::atomicUpdates;
+std::vector<Change*>		agents_handler::changes;
 MemoryRequestDispatcher		*agents_handler::dispatcher;
 
 std::map<size_t,uint64_t> agents_handler::bucketToPointerMap;	// stores where each bucket points to during the execution of the test.
@@ -26,15 +26,15 @@ void agents_handler::createCoordinators(std::vector<Coordinator*> &coordinators)
 		coordinators.push_back(new Coordinator (i, reqBufferPtr));
 }
 
-void agents_handler::createAtomicUpdates(std::vector<AtomicUpdate*> &atomicUpdates) {
+void agents_handler::createChanges(std::vector<Change*> &atomicUpdates) {
 	for (primitive::coordinator_num_t i = 0; i < config::COORDINATOR_CNT; i++)
-		atomicUpdates.push_back(new AtomicUpdate(coordinators[i]));
+		atomicUpdates.push_back(new Change(coordinators[i]));
 }
 
 void agents_handler::setup() {
 	dispatcher = new MemoryRequestDispatcher();
 	agents_handler::createCoordinators(coordinators);
-	agents_handler::createAtomicUpdates(atomicUpdates);
+	agents_handler::createChanges(changes);
 
 	// first initializing the map, so all the buckets are not pointing anywhere
 	for (size_t i = 0; i < config::HASH_SIZE; i++)
@@ -57,7 +57,9 @@ void agents_handler::resetMemoryRegions() {
 		bucketToPointerMap[i] = 0ULL;
 }
 
-void agents_handler::constructChange(Change **change __attribute__((unused)), const std::vector<std::string> updateKeys, const std::vector<std::string> pureDependencies) {
+/*
+
+void agents_handler::constructDependencies(Change **change __attribute__((unused)), const std::vector<std::string> updateKeys, const std::vector<std::string> pureDependencies) {
 	std::vector<KeyValue> updates;
 	std::vector<Dependency> dependencies;
 	std::vector<std::string>::const_iterator it;
@@ -97,6 +99,7 @@ void agents_handler::constructChange(Change **change __attribute__((unused)), co
 
 	*change = new Change(updates, dependencies);
 }
+*/
 
 void agents_handler::updateBucketInfo(const std::vector<std::string> &updateKeys, const std::vector<std::string> &pureDependencies, const Pointer &newEntryPointer) {
 	uint64_t p = newEntryPointer.toULL();
