@@ -1,5 +1,5 @@
 /*
- *  MemoryServerDispatcher.hpp
+ *  MemoryRequestDispatcher.hpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Aug 11, 2015
@@ -10,7 +10,7 @@
 #ifndef MEMORYREQUESTDISPATCHER_HPP_
 #define MEMORYREQUESTDISPATCHER_HPP_
 
-#include "Instance.hpp"
+#include "Replica.hpp"
 #include "HashBucket.hpp"
 #include "LogJournal.hpp"
 #include "../../request_buffer/RequestBuffer.hpp"
@@ -26,8 +26,10 @@
 
 class MemoryRequestDispatcher {
 private:
+	// this is the request queue for all coordinators.
+	// Coordinators 'add()' their request to this buffer, and the MemoryRequestDispatcher 'remove()' requests.
 	std::shared_ptr<RequestBuffer> reqBufferPtr_;
-	std::vector<Instance> instances_;
+	std::vector<Replica> replicas_;
 
 	ErrorType handleCASRequest(std::shared_ptr<CASRequest> &casPtr);
 	ErrorType handleReadEntryRequest(std::shared_ptr<EntryReadRequest> &entryReadReqPtr);

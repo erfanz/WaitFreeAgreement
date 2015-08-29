@@ -12,7 +12,7 @@
 StateReadRequest::StateReadRequest(
 		err_promise_t			&prom,
 		const size_t			memoryServerNum,
-		const Pointer					&entryPointer,
+		const Pointer			entryPointer,
 		EntryState::State		&state)
 : Request(prom, memoryServerNum, Request::RequestType::READ, Request::RegionType::ENTRY_STATE)
 {

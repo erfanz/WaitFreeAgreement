@@ -1,5 +1,5 @@
 /*
- *  Instance.hpp
+ *  Replica.hpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Aug 11, 2015
@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef INSTANCE_HPP_
-#define INSTANCE_HPP_
+#ifndef REPLICA_HPP_
+#define REPLICA_HPP_
 
 #include "LogJournal.hpp"
 #include "HashBucket.hpp"
@@ -16,17 +16,17 @@
 #include <vector>
 #include <memory>
 
-class Instance {
+class Replica {
 private:
 	std::vector<LogJournal> logs_;
 	HashBucket hash_;
 
 public:
-	Instance();
+	Replica();
 	LocalRegionContext<uint64_t>* getHashRegion();
 	LocalRegionContext<char>* getLogRegion(size_t index);
 	void resetMemoryRegions();
-	~Instance();
+	~Replica();
 };
 
-#endif /* INSTANCE_HPP_ */
+#endif /* REPLICA_HPP_ */

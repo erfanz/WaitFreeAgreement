@@ -66,7 +66,7 @@ ErrorType Coordinator::applyChange(const std::vector<Dependency> &deps, const st
 		// TODO: we should call resolve
 		return error::CHANGE_FAILURE;
 	else {
-		// All the CASes succeeded
+		// All the CASs succeeded
 		replicateState(**newEntry, EntryState::SERIALIZED);
 		DEBUG_COUT(CLASS_NAME, __func__, "Change successfully applied by coordinator " << (int)coordinatorID_);
 		return error::SUCCESS;
@@ -77,6 +77,7 @@ ErrorType Coordinator::createNewPointer(const std::vector<Dependency> &deps, con
 	primitive::entry_size_t entrySize = LogEntry::calculateEntrySize(deps, updates);
 	*pointer = new Pointer(coordinatorID_, generationNum_, entrySize, freeBufferOffset_);
 
+	// TODO: check if off set is greater than config::LOG_JOURNAL_SIZE, if yes, wrap
 	freeBufferOffset_ += entrySize;	// moving forward the free buffer head
 
 	DEBUG_COUT(CLASS_NAME, __func__, "Pointer created (" << (*pointer)->toHexString()
@@ -97,12 +98,12 @@ ErrorType Coordinator::propagateLogEntry(const LogEntry &entry){
 	ErrorType eType;
 
 	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++) {
-		errorFutures[i] = errorPromises[i].get_future();
+		errorFutures[i] = errorPromises[i].get_future();	// associating promise objects with future objects
 
 		std::shared_ptr<Request> reqPtr (new EntryWriteRequest(
 					errorPromises[i],
-					i,
-					coordinatorID_,
+					i,					// determines the replica number
+					coordinatorID_,		// determines which log
 					entry,
 					entry.getCurrentP().getOffset(),
 					entry.getCurrentP().getLength() ) );
@@ -110,6 +111,7 @@ ErrorType Coordinator::propagateLogEntry(const LogEntry &entry){
 		requestBuffer_->add(reqPtr);
 	}
 
+	// wait on the promises to get fulfilled
 	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++) {
 		eType = errorFutures[i].get();
 		if (eType != error::SUCCESS)
@@ -135,9 +137,6 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 		for (size_t d = 0; d < n; d++){
 			errorFutures[(i * n) + d] = errorPromises[(i * n) + d].get_future();
 
-			// std::string s = "ms, bucket: ( " + utilities::ToString<int>(i) + "," + utilities::ToString<int>(dependencies.at(d).getBucketID()) + ") expected: " + dependencies.at(d).getPointer().toHexString();
-			// std::cout << s << std::endl;
-
 			std::shared_ptr<Request> reqPtr (new CASRequest(
 					errorPromises[(i * n) + d],
 					i,
@@ -147,7 +146,6 @@ ErrorType Coordinator::publishChanges(const LogEntry &entry){
 					actualHeads[(i * n) + d] ) );
 
 			requestBuffer_->add(reqPtr);
-			usleep(1);
 		}
 	}
 
@@ -200,6 +198,7 @@ ErrorType Coordinator::replicateState(const LogEntry &entry, const EntryState::S
 	return error::SUCCESS;
 }
 
+// this is basically getCur() in the slides.
 ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &headEntry) {
 	DEBUG_COUT(CLASS_NAME, __func__, "Reading key " << key.getId() << " || coordinator " << (int)coordinatorID_);
 	HashMaker hashedKey(key.getId());
@@ -227,7 +226,7 @@ ErrorType Coordinator::readLatest(const Key &key, Value &returnValue, LogEntry &
 		else if (entry.getDependencyIfExists(hashedKey.getHashed(), pointer) == true) {
 			DEBUG_COUT (CLASS_NAME, __func__, "Dependency (" << hashedKey.getHashed() << ", "
 					<< pointer.toHexString() << ") found in log entry " << entry.getCurrentP().toHexString());
-			if ((eType = blockingReadEntry(pointer, entry)) != error::SUCCESS) {
+			if ((eType = readEntry(pointer, entry)) != error::SUCCESS) {
 				DEBUG_COUT(CLASS_NAME, __func__, "Can't fetch entry " << pointer.toHexString() << " || coordinator " << (int)coordinatorID_);
 				return eType;
 			}
@@ -344,7 +343,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 
 		/**
 		 *
-		 * entry = local.log[bucketID]_0
+		 * entry = head(local.log[bucketID])	// get the local head of bucket bucketID
 		 *
 		 */
 		std::promise<ErrorType> eProm;
@@ -368,7 +367,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 			return eType;
 		}
 
-		if ((eType = blockingReadEntry(head, headEntry)) != error::SUCCESS)
+		if ((eType = readEntry(head, headEntry)) != error::SUCCESS)
 			return eType;
 
 		/**
@@ -385,7 +384,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 		if (headEntry.getState() == EntryState::FAILED) {
 			DEBUG_COUT(CLASS_NAME, __func__, "Entry " << headEntry.getCurrentP().toHexString() << " has failed.");
 			if (headEntry.getDependencyIfExists(bucketID, head) == true) {
-				if ((eType = blockingReadEntry(head, headEntry)) != error::SUCCESS)
+				if ((eType = readEntry(head, headEntry)) != error::SUCCESS)
 						return eType;
 				return error::SUCCESS;
 			}
@@ -429,7 +428,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 		for (pointerIt = D_pointers.begin(); pointerIt != D_pointers.end(); pointerIt++) {
 			DEBUG_COUT(CLASS_NAME, __func__, "Inserting entry " << pointerIt->toHexString() << " in D_0");
 			LogEntry entry;
-			eType = blockingReadEntry(*pointerIt, entry);
+			eType = readEntry(*pointerIt, entry);
 			if (eType != error::SUCCESS) {
 				DEBUG_COUT(CLASS_NAME, __func__, "\t Can't read log entry " << pointerIt->toHexString());
 				return eType;
@@ -446,12 +445,12 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 		 *
 		 */
 		DEBUG_COUT(CLASS_NAME, __func__, "Step 4: Expanding D to find its closure");
-		std::vector<size_t> additions;
+		std::vector<size_t> toBeReadBuckets;
 		int iteration = 0;
 		do {
 			DEBUG_COUT(CLASS_NAME, __func__, "Iteration " << (iteration + 1));
 
-			additions.clear();
+			toBeReadBuckets.clear();
 
 			for (p2eIt = D_map.begin(); p2eIt != D_map.end(); p2eIt++) {
 				const LogEntry &entry = p2eIt->second;
@@ -464,15 +463,15 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 					if (bdepsUnion.find(depIt->getBucketID()) == bdepsUnion.end()) {
 						DEBUG_COUT(CLASS_NAME, __func__, "Add bucketID " << depIt->getBucketID() << " from entry " << entry.getCurrentP().toHexString());
 						// the pointer is not already in the set
-						additions.push_back(depIt->getBucketID());
+						toBeReadBuckets.push_back(depIt->getBucketID());
 						bdepsUnion.insert(depIt->getBucketID());
 					}
 				}
 			}
 
-			if (! additions.empty()) {
-				// read the bucket heads for the buckets in additions
-				eType = readBucketHeadsFromAllReplicas<std::vector<size_t> >(additions, bucketHeads);
+			if (! toBeReadBuckets.empty()) {
+				// read the bucket heads for the buckets in toBeReadBuckets list
+				eType = readBucketHeadsFromAllReplicas<std::vector<size_t> >(toBeReadBuckets, bucketHeads);
 				if (eType != error::SUCCESS) {
 					DEBUG_COUT(CLASS_NAME, __func__, "Can't read bucket heads of all replicas");
 					return eType;
@@ -490,7 +489,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 					if (D_map.find(*pointerIt) == D_map.end()) {
 						DEBUG_COUT(CLASS_NAME, __func__, "Pointer " << pointerIt->toHexString() << " added to D_" << iteration);
 						LogEntry entry;
-						eType = blockingReadEntry(*pointerIt, entry);
+						eType = readEntry(*pointerIt, entry);
 						if (eType != error::SUCCESS) {
 							DEBUG_COUT(CLASS_NAME, __func__, "Can't read log entry " << pointerIt->toHexString());
 							return eType;
@@ -500,7 +499,7 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 				}
 			}
 			iteration++;
-		} while(!additions.empty());
+		} while(!toBeReadBuckets.empty());
 
 
 		/**
@@ -521,11 +520,12 @@ ErrorType Coordinator::resolve(const size_t bucketID, LogEntry &headEntry) {
 			}
 			else {
 				eType = finishMakingSerialized(e, bucketHeads, D_map);
-				if (eType == error::SUCCESS)
+				if (eType == error::SUCCESS) {
+					// XXX [VERIFY]: if replicating the state globally is correct and needed
+					replicateState(e, EntryState::State::SERIALIZED);
 					DEBUG_COUT(CLASS_NAME, __func__, "Entry " << e.getCurrentP().toHexString() << " is marked SERIALIZED on all replicas");
+				}
 				else
-					// TODO: since we rely on the fact that a log entry must be marked serialized everywhere to be able be depended on,
-					// we must make sure that it's marked serialized everywhere.
 					DEBUG_COUT(CLASS_NAME, __func__, "Error in marking entry " << e.getCurrentP().toHexString() << " SERIALIZED on all replicas");
 			}
 		}
@@ -574,7 +574,7 @@ ErrorType Coordinator::readBucketHeadsFromAllReplicas(const container &readBucke
 	return error::SUCCESS;
 }
 
-ErrorType Coordinator::blockingReadEntry(const Pointer &pointer, LogEntry &entry) {
+ErrorType Coordinator::readEntry(const Pointer &pointer, LogEntry &entry) {
 	DEBUG_COUT (CLASS_NAME, __func__, "Requesting the log entry for " << pointer.toHexString());
 
 	if (pointer.isNull()) {
@@ -617,8 +617,10 @@ bool Coordinator::isFailed (const LogEntry &e, const std::vector<std::map<size_t
 			const Pointer &pHead = repIt->at(depIt->getBucketID());
 			const LogEntry &eHead = pointerToEntryMap.at(pHead);
 			if (e < eHead) {
-				// TODO: here, we assume that dependencies are always marked serialized.
-				// If we don't have this assumption, then we need to follow down to see if e in r.log[b] or not
+				// TODO:[IMPORTANT] here, we assume that dependencies are always marked serialized.
+				// If we don't have this assumption, then we need to follow down the chain to see if e is in r.log[b] or not
+
+				// TODO:[IMPORTANT] e.dep[b] < h and serialized(h) must be added
 				if (e.getState() != EntryState::SERIALIZED)
 					return true;
 			}

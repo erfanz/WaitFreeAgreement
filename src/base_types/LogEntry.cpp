@@ -48,6 +48,7 @@ LogEntry::LogEntry(const std::vector<Dependency> &dependencies, const std::vecto
  * 	- true if the current entry is smaller than the input entry. Otherwise false.
  */
 bool LogEntry::operator< (const LogEntry &right) const {
+	// TODO: [IMPORTANT] this should be changed to timestamp
 	return currentP_ < right.getCurrentP();
 }
 
@@ -61,7 +62,7 @@ bool LogEntry::operator< (const LogEntry &right) const {
  * 	- true if the current entry is bigger than the input entry. Otherwise false.
  */
 bool LogEntry::operator>(const LogEntry &right) const {
-	// TODO: this should be changed
+	// TODO: this should be changed to timestamp
 	return currentP_ > right.getCurrentP();
 }
 

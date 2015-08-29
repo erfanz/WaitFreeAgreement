@@ -24,7 +24,6 @@ public:
 	virtual ErrorType read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length) = 0;
 	virtual ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length) = 0;
 	virtual ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset) = 0;
-	//virtual ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) = 0;
 	virtual ~AbstractRegionContext() = 0;
 };
 

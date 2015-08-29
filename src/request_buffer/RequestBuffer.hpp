@@ -11,6 +11,7 @@
 #define REQUESTBUFFER_HPP_
 
 #include "request/Request.hpp"
+#include "../config.hpp"
 #include <mutex>
 #include <condition_variable>
 #include <memory>	// std::shared_ptr
@@ -21,7 +22,7 @@ class RequestBuffer {
 protected:
 	std::mutex mu_;
 	std::condition_variable cond_;
-	const size_t size_ = 1000;
+	const size_t size_ = config::REQUEST_QUEUE_SIZE;
 
 public:
 	virtual void add(req_ptr_t req) = 0;

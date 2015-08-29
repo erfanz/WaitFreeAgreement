@@ -10,7 +10,7 @@
 
 #include "Serializable.hpp"
 #include "PrimitiveTypes.hpp"	// primitive::XXX
-#include <iostream>      // std::ios, std::istream, std::cout
+#include <iostream>				// std::ios, std::istream, std::cout
 #include <stdint.h>
 #include <string>
 
@@ -49,7 +49,6 @@ public:
 	primitive::pointer_size_t toULL() const;
 	std::string toString() const;
 	std::string toHexString() const;
-	// int compare(const Pointer &pointer) const;
 	static void fromBinaryString(const std::string &serialized, Pointer &pointer);
 	static void doDeserialize(std::istream& stream, Pointer &p);
 

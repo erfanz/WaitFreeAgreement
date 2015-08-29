@@ -1,5 +1,5 @@
 /*
- *  MemoryServerDispatcher.cpp
+ *  MemoryRequestDispatcher.cpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Aug 11, 2015
@@ -19,12 +19,10 @@
 
 #define CLASS_NAME	"MSDispatcher"
 
-#include <string>
-
 typedef error::ErrorType ErrorType;
 
 MemoryRequestDispatcher::MemoryRequestDispatcher()
-: instances_(config::MEMORY_SERVER_CNT){
+: replicas_(config::MEMORY_SERVER_CNT){
 	DEBUG_COUT (CLASS_NAME, __func__, "MemoryRequestDispatcher created!");
 	//reqBufferPtr_.reset(new LIFORequestBuffer());
 	reqBufferPtr_.reset(new RandomRequestBuffer());
@@ -36,7 +34,7 @@ std::shared_ptr<RequestBuffer> MemoryRequestDispatcher::getRequestBuffer(){
 
 void MemoryRequestDispatcher::resetAllInstances() {
 	for (size_t i = 0; i < config::MEMORY_SERVER_CNT; i++)
-		instances_.at(i).resetMemoryRegions();
+		replicas_.at(i).resetMemoryRegions();
 }
 
 void MemoryRequestDispatcher::run() {
@@ -45,8 +43,6 @@ void MemoryRequestDispatcher::run() {
 		//std::this_thread::sleep_for(std::chrono::seconds(1));
 
 		std::shared_ptr<Request> req = reqBufferPtr_->remove();
-		//std::string s = "run: ms=" + utilities::ToString<int>(req->getMemoryServerNumber());
-		//std::cout << s << std::endl;
 
 		if (req->getRequestType() == Request::RequestType::CAS) {
 			DEBUG_COUT(CLASS_NAME, __func__, "Received CAS request");
@@ -110,10 +106,7 @@ ErrorType MemoryRequestDispatcher::handleCASRequest(std::shared_ptr<CASRequest> 
 	primitive::pointer_size_t	desired		= paramPtr->desiredHead_.toULL();
 	size_t bucketID = paramPtr->offset_;
 
-	//std::string s = "inside Dispatcher: ms, bucket = (" + utilities::ToString<int>(msNum) + "-" + utilities::ToString<int>(bucketID);
-	//std::cout << s << std::endl;
-
-	eType = instances_.at(msNum).getHashRegion()->CAS(&expected, desired, paramPtr->offset_);
+	eType = replicas_.at(msNum).getHashRegion()->CAS(&expected, desired, paramPtr->offset_);
 
 	if (eType == error::SUCCESS)
 		DEBUG_COUT(CLASS_NAME, __func__, "CASing bucket " << bucketID << " on MS " << msNum << " succeeded (expected: "
@@ -134,7 +127,7 @@ ErrorType MemoryRequestDispatcher::handleReadEntryRequest(std::shared_ptr<EntryR
 	LogEntry &entry = paramPtr->localEntry_;
 	char readBuffer[paramPtr->length_];
 
-	eType = instances_.at(msNum).getLogRegion(cID)->read(readBuffer, paramPtr->remoteBufferOffset_, paramPtr->length_);
+	eType = replicas_.at(msNum).getLogRegion(cID)->read(readBuffer, paramPtr->remoteBufferOffset_, paramPtr->length_);
 
 	if (eType == error::SUCCESS) {
 		std::string tempStr(readBuffer, paramPtr->length_);
@@ -161,7 +154,7 @@ ErrorType MemoryRequestDispatcher::handleWriteEntryRequest(std::shared_ptr<Entry
 	const std::string& tmp = os.str();
 	const char* cstr = tmp.c_str();
 
-	eType = instances_.at(msNum).getLogRegion(cID)->write(cstr, paramPtr->remoteBufferOffset_, paramPtr->length_);
+	eType = replicas_.at(msNum).getLogRegion(cID)->write(cstr, paramPtr->remoteBufferOffset_, paramPtr->length_);
 
 	if (eType == error::SUCCESS)
 		DEBUG_COUT(CLASS_NAME, __func__, "Log Entry " << entry.getCurrentP().toHexString() << " written on log journal[" << (int)cID << "] on MS " << msNum);
@@ -179,7 +172,7 @@ ErrorType MemoryRequestDispatcher::handleReadBucketRequest(std::shared_ptr<Bucke
 	Pointer &pointer = paramPtr->localPointer_;
 	primitive::pointer_size_t	readBuffer[1];
 
-	eType = instances_.at(msNum).getHashRegion()->read(readBuffer, paramPtr->remoteBufferOffset_, sizeof(primitive::pointer_size_t));
+	eType = replicas_.at(msNum).getHashRegion()->read(readBuffer, paramPtr->remoteBufferOffset_, sizeof(primitive::pointer_size_t));
 	if (eType != error::SUCCESS) {
 		DEBUG_COUT(CLASS_NAME, __func__, "Failure in reading bucket " << bucketID << " from MS " << msNum);
 		return eType;
@@ -208,7 +201,7 @@ ErrorType MemoryRequestDispatcher::handleReadStateRequest(std::shared_ptr<StateR
 	primitive::offset_t					offset			= (primitive::offset_t)(entryPointer.getOffset()
 				+ Pointer::getTotalSize() + 1);		// since we first store the pointer and a whitespace before the serialized flag
 
-	eType = instances_.at(msNum).getLogRegion(cID)->read(readBuffer, offset, readLength);
+	eType = replicas_.at(msNum).getLogRegion(cID)->read(readBuffer, offset, readLength);
 	if (eType == error::SUCCESS) {
 		char *pNext;
 		paramPtr->state_ = static_cast<EntryState::State>(strtoul (readBuffer, &pNext, 10));
@@ -231,7 +224,7 @@ ErrorType MemoryRequestDispatcher::handleWriteStateRequest(std::shared_ptr<State
 	const std::string& state = utilities::ToString<int>(paramPtr->state_);
 	const char* cstr = state.c_str();
 
-	eType = instances_.at(msNum).getLogRegion(cID)->write(cstr, offset, writeLength);
+	eType = replicas_.at(msNum).getLogRegion(cID)->write(cstr, offset, writeLength);
 	return eType;
 }
 

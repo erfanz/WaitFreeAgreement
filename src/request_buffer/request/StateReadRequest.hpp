@@ -21,15 +21,15 @@ typedef std::shared_ptr<Pointer> pointer_ptr_t;
 class StateReadRequest: public Request {
 public:
 	struct StateReadParameters {
-		const Pointer		&entryPointer_;
+		const Pointer		entryPointer_;
 		EntryState::State	&state_;
 
-		StateReadParameters(const Pointer &entryPointer, EntryState::State &state):
+		StateReadParameters(const Pointer entryPointer, EntryState::State &state):
 			entryPointer_(entryPointer),
 			state_(state){}
 	};
 
-	StateReadRequest(err_promise_t &, const size_t memoryServerNum, const Pointer &entryPointer, EntryState::State &state);
+	StateReadRequest(err_promise_t &, const size_t memoryServerNum, const Pointer entryPointer, EntryState::State &state);
 	std::shared_ptr<StateReadRequest::StateReadParameters>& getParameters();
 
 	~StateReadRequest();

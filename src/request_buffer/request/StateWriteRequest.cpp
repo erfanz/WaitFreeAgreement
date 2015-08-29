@@ -12,8 +12,8 @@
 StateWriteRequest::StateWriteRequest(
 		err_promise_t			&prom,
 		const size_t			memoryServerNum,
-		const Pointer			&entryPointer,
-		const EntryState::State	&state)
+		const Pointer			entryPointer,
+		const EntryState::State	state)
 : Request(prom, memoryServerNum, Request::RequestType::WRITE, Request::RegionType::ENTRY_STATE)
 {
 	params_.reset(new StateWriteRequest::StateWriteParameters(entryPointer, state));

@@ -127,6 +127,7 @@ ErrorType Change::serialize() {
 	eType = coordinator_->applyChange(deps, updates_, tid, &newEntry);
 
 	if (eType == error::SUCCESS)
+		// if all the CASs succeed, we return success
 		return error::SUCCESS;
 	else {
 		// it would be unsafe to assume that the change was unsuccessful,

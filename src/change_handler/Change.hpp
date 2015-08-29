@@ -31,7 +31,7 @@ private:
 public:
 	Change(Coordinator *coordinator);
 	void reset();
-	ErrorType	get(const Key &key, Value &value);
+	ErrorType	get(const Key &key, Value &value);		// it's getCur()
 	ErrorType	set(const Key &key, const Value &value);
 	ErrorType	serialize();
 	~Change();

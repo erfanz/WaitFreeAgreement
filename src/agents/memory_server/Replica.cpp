@@ -1,5 +1,5 @@
 /*
- *  Instance.cpp
+ *  Replica.cpp
  *
  *  Author		: Erfan Zamanian
  *  Created on	: Aug 11, 2015
@@ -7,31 +7,31 @@
  *
  */
 
-#include "Instance.hpp"
+#include "Replica.hpp"
 #include "../../util/utils.hpp"
 
-#define CLASS_NAME	"Instance"
+#define CLASS_NAME	"Replica"
 
-Instance::Instance()
+Replica::Replica()
 : logs_(config::COORDINATOR_CNT) {
 	resetMemoryRegions();
 }
 
-LocalRegionContext<uint64_t>* Instance::getHashRegion() {
+LocalRegionContext<uint64_t>* Replica::getHashRegion() {
 	return hash_.region_;
 }
 
-LocalRegionContext<char>* Instance::getLogRegion(size_t index) {
+LocalRegionContext<char>* Replica::getLogRegion(size_t index) {
 	return logs_.at(index).region_;
 }
 
-void Instance::resetMemoryRegions() {
+void Replica::resetMemoryRegions() {
 	hash_.resetRegion();
 
 	for (size_t i = 0; i < config::COORDINATOR_CNT; i++)
 		logs_[i].resetRegion();
 }
 
-Instance::~Instance() {
-	DEBUG_COUT (CLASS_NAME, __func__, "Instance destroyed!");
+Replica::~Replica() {
+	DEBUG_COUT (CLASS_NAME, __func__, "Replica destroyed!");
 }

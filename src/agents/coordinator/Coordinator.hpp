@@ -35,7 +35,7 @@ private:
 	size_t								localMSIndex_;
 
 	template <typename container> ErrorType readBucketHeadsFromAllReplicas(const container &readBuckets, std::vector<std::map<size_t, Pointer> > &bucketHeads);
-	ErrorType blockingReadEntry(const Pointer &pointer, LogEntry &entry);
+	ErrorType readEntry(const Pointer &pointer, LogEntry &entry);
 	bool isFailed (const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap) const;
 	ErrorType finishMakingSerialized(const LogEntry &e, const std::vector<std::map<size_t, Pointer> > &collectedBucketHeads, const std::map<Pointer, LogEntry> &pointerToEntryMap);
 	ErrorType createNewPointer(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, Pointer **pointer);
@@ -45,12 +45,10 @@ private:
 	ErrorType replicateState(const LogEntry &entry, const EntryState::State state);
 	static std::string printChange(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates);
 
-
 public:
 	friend class CoordinatorTest;	// since we want to test even private member methods of Coordinator in our unit tests
 	Coordinator(primitive::coordinator_num_t coordinatorID, std::shared_ptr<RequestBuffer> requestBuffer);
 	primitive::coordinator_num_t getID();
-
 	ErrorType applyChange(const std::vector<Dependency> &deps, const std::vector<KeyValue> &updates, const TID tID, LogEntry **newEntry);
 	ErrorType readLatest(const Key &key, Value &returnValue, LogEntry &headEntry);
 	//ErrorType readByKey(const Key key, const SCN scn, const TID tid, Value &returnValue);

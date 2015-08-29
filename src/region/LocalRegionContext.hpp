@@ -25,7 +25,6 @@ public:
 	ErrorType read(T* destinationBuffer, const primitive::offset_t sourceBufferOffset, const std::size_t length);
 	ErrorType write(const T* sourceBuffer, const primitive::offset_t destinationBufferOffset, const std::size_t length);
 	ErrorType CAS(T* expectedValue, const T &desiredValue, const primitive::offset_t sourceBufferOffset);
-	//ErrorType multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets);
 	~LocalRegionContext();
 };
 
@@ -61,11 +60,6 @@ ErrorType LocalRegionContext<T>::CAS(T* expectedValue, const T &desiredValue, co
 	else
 		return error::CAS_FAILED;
 }
-
-//template <typename T>
-//ErrorType LocalRegionContext<T>::multiCAS(std::vector<T*> expectedValues, const T &desiredValue, const std::vector<primitive::offset_t> sourceBufferOffsets) {
-//	return error::SUCCESS;
-//}
 
 template <typename T>
 LocalRegionContext<T>::~LocalRegionContext() {
